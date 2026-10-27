@@ -16,6 +16,10 @@ ZZSH.DATA = {
   meta: {
     title: "字字生花",
     subtitle: "把汉字部件拖到一起，合成新字，点亮你的汉字图鉴",
+    /* release = 对外发布版本号，展示在关于页与控制台 */
+    release: "1.0",
+    /* version = 存档格式版本号，仅供 state.js 做迁移比较，必须为数字，
+     * 改动它会导致旧存档被重置，非必要不要动 */
     version: 1,
     saveKey: "zzsh_save_v1"
   },

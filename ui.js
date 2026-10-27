@@ -851,6 +851,9 @@
   function init() {
     /* 启动自愈：旧版本存档可能缺部件/成就（例如配方表更新后），自动补齐 */
     try { ZZSH.engine.selfHeal(); } catch (e) { /* ignore */ }
+    /* 关于页显示发布版本号 */
+    var av = $("#about-version");
+    if (av) av.textContent = "v" + D.meta.release;
     bindEvents();
     bindSettings();
     renderAll();

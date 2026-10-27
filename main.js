@@ -46,7 +46,7 @@
       if (e.target.closest(".tile, .board, .codex-cell")) e.preventDefault();
     });
 
-    console.log("%c字字生花 %cv" + ZZSH.DATA.meta.version +
+    console.log("%c字字生花 %cv" + ZZSH.DATA.meta.release +
       " · 数据自检见 tools/validate_data.js",
       "font-family:serif;font-size:16px;color:#C8102E", "color:#6b6455");
   });
