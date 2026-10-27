@@ -1,0 +1,15 @@
+# 测试缓存与截图产物
+.playwright-cli/
+tools/_fontsrc/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# 编辑器 / 系统
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 依赖
+node_modules/

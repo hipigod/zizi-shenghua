@@ -1,0 +1,593 @@
+/* ============================================================
+ * 字字生花 · data.js
+ * ------------------------------------------------------------
+ * 内容编写规矩（红线，改内容前必读）：
+ * 1. 释义只讲「结构 + 本义 + 组词」，绝不谈吉凶、运势、性格。
+ * 2. 「结构 ≠ 字源」的字，note 必须写明「看起来是 A+B，其实……」。
+ * 3. 偏旁变形三处必注：水→氵、人→亻、月（肉月旁）。
+ * 4. 生僻字（isRare）数量 ≤ 全部字的 20%。
+ * 5. originSource 没有可靠出处时留空，卡片自动隐藏「本义出处」。
+ * 6. 「囚」等字的趣解必须温和，不含暴力、恐怖表述。
+ * ============================================================ */
+window.ZZSH = window.ZZSH || {};
+
+ZZSH.DATA = {
+
+  meta: {
+    title: "字字生花",
+    subtitle: "把汉字部件拖到一起，合成新字，点亮你的汉字图鉴",
+    version: 1,
+    saveKey: "zzsh_save_v1"
+  },
+
+  /* ---------- 主线定义（颜色用于库存分组与字块边框） ---------- */
+  lines: {
+    caomu:  { name: "草木之间", color: "#5B8C5A", emoji: "🌳", order: 1 },
+    riyue:  { name: "日月星辰", color: "#C9A227", emoji: "☀️", order: 2 },
+    renwu:  { name: "人来人往", color: "#8D6E63", emoji: "👥", order: 3 },
+    shuihuo:{ name: "水火之间", color: "#4A7FA5", emoji: "🔥", order: 4 },
+    pinwu:  { name: "品物流形", color: "#7E57C2", emoji: "🧩", order: 5 }
+  },
+
+  /* ---------- 起始部件 ---------- */
+  parts: ["日", "月", "木", "人", "口"],
+
+  /* 部件补充说明（字源卡上部件也显示，但部件不入图鉴） */
+  partInfo: {
+    "日": { pinyin: "rì",  note: "太阳的象形，圆中一点" },
+    "月": { pinyin: "yuè", note: "月亮的象形，弯弯一钩" },
+    "木": { pinyin: "mù",  note: "树木的象形，上枝下根" },
+    "人": { pinyin: "rén", note: "侧立的人形，一撇一捺" },
+    "口": { pinyin: "kǒu", note: "张开的嘴巴" },
+    "一": { pinyin: "yī",  note: "一个指事符号，常表示位置" },
+    "水": { pinyin: "shuǐ", note: "流水之形；到左边写作「氵」" },
+    "火": { pinyin: "huǒ", note: "火苗之形，象跳跃的光" },
+    "田": { pinyin: "tián", note: "阡陌纵横的田地" },
+    "心": { pinyin: "xīn", note: "心脏之形；到左边写作「忄」" },
+    "力": { pinyin: "lì",  note: "手臂发力之形" },
+    "小": { pinyin: "xiǎo", note: "细小的点粒" },
+    "大": { pinyin: "dà",  note: "正面站立、张开手臂的人" },
+    "不": { pinyin: "bù",  note: "花萼之形（一说），借为否定词" },
+    "正": { pinyin: "zhèng", note: "脚趾向着目标走，不偏不斜" },
+    "门": { pinyin: "mén", note: "两扇门之形；简化为「门」" },
+    "土": { pinyin: "tǔ",  note: "地面上的土堆" },
+    "十": { pinyin: "shí", note: "一横一竖，表示完整、多" },
+    "目": { pinyin: "mù",  note: "眼睛竖起来的样子" }
+  },
+
+  /* ---------- 62 个合成字 ---------- */
+  chars: {
+
+    /* ===== 主线一 · 草木之间（13） ===== */
+    "林": { pinyin: "lín", structure: "左右", line: "caomu", rare: false,
+      origin: "成片的树木。《说文解字》：平土有丛木曰林。",
+      originSource: "《说文解字》",
+      fun: "一棵树有点孤单，两棵树站在一起，就是森林的第一步。",
+      words: ["树林", "竹林", "森林"], note: "" },
+
+    "森": { pinyin: "sēn", structure: "品字", line: "caomu", rare: false, triple: true,
+      origin: "树木丛生繁密的样子。",
+      originSource: "《说文解字》",
+      fun: "三棵树叠罗汉，树上长树，绿得望不到边。",
+      words: ["森林", "森严"], note: "" },
+
+    "本": { pinyin: "běn", structure: "独体", line: "caomu", rare: false,
+      origin: "树根。在「木」的下部加一横，指明根部所在。",
+      originSource: "《说文解字》",
+      fun: "在树的最下面画一横：「记住，你在这儿扎了根。」",
+      words: ["根本", "本来", "本子"], note: "指事字：同一横，位置不同，字就不同。" },
+
+    "末": { pinyin: "mò", structure: "独体", line: "caomu", rare: false,
+      origin: "树梢。在「木」的上端加一横，指明梢部。",
+      originSource: "《说文解字》",
+      fun: "同一棵树，横往上挪，就到了树梢——越到末梢越细啦。",
+      words: ["末尾", "周末", "末梢"], note: "指事字：横在树梢。" },
+
+    "未": { pinyin: "wèi", structure: "独体", line: "caomu", rare: false,
+      origin: "重枝叠叶的树；一说像枝头含苞。后借表「没有」「还不」。",
+      originSource: "《说文解字》",
+      fun: "上横短、下横长，像枝头刚冒的新芽——一切还没开始，一切都来得及。",
+      words: ["未来", "未知", "未曾"], note: "指事字：短横在上，像新芽。" },
+
+    "休": { pinyin: "xiū", structure: "左右", line: "caomu", rare: false,
+      origin: "人靠在树旁歇息。《说文解字》：休，息止也。从人依木。",
+      originSource: "《说文解字》",
+      fun: "走累了的人，找到一棵大树，靠着睡了个午觉。",
+      words: ["休息", "休假", "午休"], note: "「人」在左边写作「亻」。" },
+
+    "困": { pinyin: "kùn", structure: "全包围", line: "caomu", rare: false,
+      origin: "树被围住，不得伸展。《说文解字》释为「故庐」（旧说：废弃的房屋），木在囗中。",
+      originSource: "《说文解字》",
+      fun: "一棵小树被围栏圈住，伸不开枝条，只好先睡一觉，等风来。",
+      words: ["困难", "困住", "困倦"], note: "外面的框是「囗」（围栏 wéi），不是嘴巴的口。" },
+
+    "呆": { pinyin: "dāi", structure: "上下", line: "caomu", rare: false,
+      origin: "迟钝、不灵活；发愣。现代通行「口 + 木」的拆法。",
+      originSource: "",
+      fun: "一张小嘴待在树下，听着风声发了呆——发会儿呆也没关系呀。",
+      words: ["发呆", "呆住", "呆板"], note: "古字作「獃」，「呆」是后来的俗字。" },
+
+    "杏": { pinyin: "xìng", structure: "上下", line: "caomu", rare: false,
+      origin: "杏树、杏子。通行讲法：木表意，下面表音（古音相近）。",
+      originSource: "",
+      fun: "树上结的果子甜得让人张大了嘴：啊呜一口。",
+      words: ["杏子", "杏花", "杏仁"], note: "" },
+
+    "果": { pinyin: "guǒ", structure: "上下", line: "caomu", rare: false,
+      origin: "树上结的果实。甲骨文像树上结果之形。",
+      originSource: "",
+      fun: "三千年前的画家在树梢画了一圈甜，就是它啦。",
+      words: ["果实", "水果", "结果"], note: "象形字：上面的「田」是画出来的果实，不是田地。" },
+
+    "棵": { pinyin: "kē", structure: "左右", line: "caomu", rare: false,
+      origin: "植物的量词。木表意，果表音。",
+      originSource: "",
+      fun: "一棵树、一棵苗——树朋友也有自己的「计数暗号」。",
+      words: [], note: "形声字：木表意，果表音。它是量词字，本身不组词，只说「一棵树」「几棵草」。" },
+
+    "枯": { pinyin: "kū", structure: "左右", line: "caomu", rare: false,
+      origin: "树木失去水分。木表意，古表音（兼含「老」意）。",
+      originSource: "",
+      fun: "树一旦老了、渴了，木头就干得皱起来。",
+      words: ["枯草", "枯叶", "枯井"], note: "形声字：木表意，古表音。" },
+
+    "焚": { pinyin: "fén", structure: "上下", line: "caomu", rare: false,
+      origin: "烧林垦荒。甲骨文像手持火把烧林。《说文解字》：焚，烧田也。",
+      originSource: "《说文解字》",
+      fun: "火跑进树林，噼里啪啦——古人在烧荒开田，如今进山可不能带火种哦。",
+      words: ["焚烧", "焚毁"], note: "" },
+
+    /* ===== 主线二 · 日月星辰（9） ===== */
+    "明": { pinyin: "míng", structure: "左右", line: "riyue", rare: false,
+      origin: "光亮。日月同辉。《说文解字》：明，照也。",
+      originSource: "《说文解字》",
+      fun: "太阳下班了，月亮来接班，两个光亮凑在一起，世界没有黑过。",
+      words: ["明亮", "光明", "明天"], note: "" },
+
+    "昌": { pinyin: "chāng", structure: "上下", line: "riyue", rare: false,
+      origin: "光明、兴盛。《说文解字》以为从日从曰（美言）。",
+      originSource: "《说文解字》",
+      fun: "太阳把要说的话说得亮亮堂堂，日子就兴旺起来。",
+      words: ["昌盛", "繁荣昌盛"], note: "按现代字形是两个「日」；古文字里下面其实是「曰」（说话）。" },
+
+    "晶": { pinyin: "jīng", structure: "品字", line: "riyue", rare: false, triple: true,
+      origin: "星光；光亮。《说文解字》：晶，精光也。",
+      originSource: "《说文解字》",
+      fun: "三个小太阳叠在一起，亮得像天上的星星在开会。",
+      words: ["晶莹", "亮晶晶", "水晶"], note: "" },
+
+    "旦": { pinyin: "dàn", structure: "上下", line: "riyue", rare: false,
+      origin: "天亮、早晨。太阳升出地平线之形。",
+      originSource: "",
+      fun: "太阳使劲一蹦，从地平线里探出了脑袋——早上好！",
+      words: ["元旦", "花旦"], note: "" },
+
+    "杲": { pinyin: "gǎo", structure: "上下", line: "riyue", rare: true,
+      origin: "太阳升到树上，明亮的样子。《诗经》：杲杲出日。",
+      originSource: "《诗经》",
+      fun: "太阳爬上树梢，把每片叶子都点亮——这是古人说「亮」的办法。",
+      words: ["杲杲（形容太阳明亮）"], note: "" },
+
+    "杳": { pinyin: "yǎo", structure: "上下", line: "riyue", rare: true,
+      origin: "太阳落到树下，幽暗；引申为无影无踪。",
+      originSource: "",
+      fun: "同样的太阳和树，往下一沉，天就暗了——杳无音信的「杳」。",
+      words: ["杳无音信", "杳杳"], note: "" },
+
+    "朋": { pinyin: "péng", structure: "左右", line: "riyue", rare: false,
+      origin: "同门为朋；朋友。古文字一般认为借「凤」的形体（一说两串贝）。",
+      originSource: "",
+      fun: "两轮月亮并排走，谁也不遮谁的光——好朋友就是这样。",
+      words: ["朋友", "小朋友", "朋辈"], note: "双月只是巧合：它其实是「凤」的古字借形，与月亮无关。" },
+
+    "早": { pinyin: "zǎo", structure: "上下", line: "riyue", rare: false,
+      origin: "早晨。《说文解字》：从日在甲上（太阳刚爬上「甲」）。",
+      originSource: "《说文解字》",
+      fun: "太阳刚爬到「甲」字的上头，一天就开始啦。",
+      words: ["早上", "早操", "早点"], note: "" },
+
+    "是": { pinyin: "shì", structure: "上下", line: "riyue", rare: false,
+      origin: "正、直；正确。《说文解字》：是，直也，从日正。",
+      originSource: "《说文解字》",
+      fun: "太阳站在正当中，影子不偏不倚——古人眼里的「正确」。",
+      words: ["是的", "正是", "但是"], note: "" },
+
+    /* ===== 主线三 · 人来人往（14） ===== */
+    "从": { pinyin: "cóng", structure: "左右", line: "renwu", rare: false,
+      origin: "二人相随而行。",
+      originSource: "《说文解字》",
+      fun: "一个人在前走，一个人跟在后——跟着走，就是「从」。",
+      words: ["跟从", "从来", "服从"], note: "" },
+
+    "众": { pinyin: "zhòng", structure: "品字", line: "renwu", rare: false, triple: true,
+      origin: "许多人。",
+      originSource: "《说文解字》",
+      fun: "三个人叠罗汉，站成了「人多力量大」的样子。",
+      words: ["群众", "众人", "观众"], note: "" },
+
+    "囚": { pinyin: "qiú", structure: "全包围", line: "renwu", rare: false,
+      origin: "人被关在围栏里。",
+      originSource: "《说文解字》",
+      fun: "一个人走进围栏里，暂时出不来——所以围栏要好好设计，门要留在外面呀。",
+      words: ["囚禁", "囚徒"], note: "外框是「囗」（围栏），不是嘴巴的口。" },
+
+    "吕": { pinyin: "lǚ", structure: "上下", line: "renwu", rare: false,
+      origin: "本义与脊骨有关（象两节脊椎相连）；后借用于音律、姓氏。",
+      originSource: "《说文解字》",
+      fun: "两节小骨头连成一串，后来它去当了音乐指挥——律吕的「吕」。",
+      words: ["律吕（古代音律）"], note: "看起来是口 + 口，其实一般认为象脊骨之形，与嘴无关。" },
+
+    "回": { pinyin: "huí", structure: "全包围", line: "renwu", rare: false,
+      origin: "旋转；返回。古文字像水流回旋之形。",
+      originSource: "",
+      fun: "小口走进大口的家，转了个圈又出来——回来啦。",
+      words: ["回来", "回家", "回去"], note: "外框同样是「囗」，像漩涡转圈。" },
+
+    "品": { pinyin: "pǐn", structure: "品字", line: "renwu", rare: false, triple: true,
+      origin: "众多；又表等级、品尝。《说文解字》：品，众庶也。",
+      originSource: "《说文解字》",
+      fun: "三张小嘴排排坐，尝一尝、评一评——评出了等级，也品出了味道。",
+      words: ["品尝", "物品", "品格"], note: "" },
+
+    "闪": { pinyin: "shǎn", structure: "半包围", line: "renwu", rare: false,
+      origin: "人在门中忽隐忽现；突然显现。",
+      originSource: "",
+      fun: "门一开，人影一晃——嗖！他闪进屋里去了。",
+      words: ["闪电", "闪光", "躲闪"], note: "" },
+
+    "问": { pinyin: "wèn", structure: "半包围", line: "renwu", rare: false,
+      origin: "询问。《说文解字》：问，讯也，从口门声——它是形声字，「门」在这里是声旁。",
+      originSource: "《说文解字》",
+      fun: "站在门外张开嘴：「请问，有人在家吗？」",
+      words: ["问题", "提问", "学问"], note: "看着像「口在门中」的会意，其实《说文》归为形声：从口，门声。" },
+
+    "间": { pinyin: "jiān", structure: "半包围", line: "renwu", rare: false,
+      origin: "缝隙。《说文解字》：閒，隙也，从门从月——门闭而月光透入。简体把「月」改写成了「日」。",
+      originSource: "《说文解字》",
+      fun: "月光从门缝挤进来，画了一条细细的银线——那就是「间」。",
+      words: ["中间", "时间", "房间"], note: "简体「间」门内写作「日」；繁体与《说文》本作「閒」，门中是「月」——月光透进门缝才是缝隙。" },
+
+    "闷": { pinyin: "mèn", structure: "半包围", line: "renwu", rare: false,
+      origin: "心被关在门里，烦闷。",
+      originSource: "",
+      fun: "把一颗心关在门里，不透气的滋味，就叫「闷」。",
+      words: ["闷热", "烦闷", "闷闷不乐"], note: "" },
+
+    "闲": { pinyin: "xián", structure: "半包围", line: "renwu", rare: false,
+      origin: "门里的木栅栏；引申为空闲。",
+      originSource: "《说文解字》",
+      fun: "给门上根木栓，拦住所有急事——难得浮生半日闲。",
+      words: ["空闲", "休闲", "闲逛"], note: "本义是门内的木栅栏，不是「闲着没事」的闲。" },
+
+    "坐": { pinyin: "zuò", structure: "上下", line: "renwu", rare: false,
+      origin: "两人对坐在土上。",
+      originSource: "",
+      fun: "两个人面对面坐在土堆上，聊啊聊——古人聊天就是「坐」。",
+      words: ["坐下", "请坐", "坐车"], note: "" },
+
+    "加": { pinyin: "jiā", structure: "左右", line: "renwu", rare: false,
+      origin: "本义是说空话、添油加醋；引申为增加。《说文解字》：语相增加也。",
+      originSource: "《说文解字》",
+      fun: "嘴上多使一份力，话就多了几分——不过我们更喜欢用它做加法。",
+      words: ["加法", "增加", "加油"], note: "" },
+
+    "吐": { pinyin: "tǔ", structure: "左右", line: "renwu", rare: false,
+      origin: "从口而出。口表意，土表音。",
+      originSource: "",
+      fun: "嘴巴里蹦出一个「土」音——春蚕吐丝，也用这个字。",
+      words: ["吐丝", "谈吐", "吐出"], note: "形声字：口表意，土表音。" },
+
+    /* ===== 主线四 · 水火之间（15） ===== */
+    "炎": { pinyin: "yán", structure: "上下", line: "shuihuo", rare: false,
+      origin: "火光上升；热。",
+      originSource: "《说文解字》",
+      fun: "一把火不够热，两把火叠起来，夏天到啦。",
+      words: ["炎热", "发炎", "炎夏"], note: "" },
+
+    "焱": { pinyin: "yàn", structure: "品字", line: "shuihuo", rare: true, triple: true,
+      origin: "火花、光华。《说文解字》：焱，火华也。",
+      originSource: "《说文解字》",
+      fun: "三簇火苗手拉手，跳成一朵火花——很少见的字，收藏啦！",
+      words: [], note: "三个火的品字结构；生僻字，日常几乎用不到，只作收藏。" },
+
+    "燚": { pinyin: "yì", structure: "四叠", line: "shuihuo", rare: true,
+      origin: "火燃烧的样子。",
+      originSource: "",
+      fun: "四把火叠在一起，是汉字里的篝火晚会！",
+      words: [], note: "四个火叠成，属「四叠字」（不是品字结构）；规范字表未收，作为收藏彩蛋。" },
+
+    "沝": { pinyin: "zhuǐ", structure: "左右", line: "shuihuo", rare: true,
+      origin: "二水。",
+      originSource: "",
+      fun: "两条小溪并排流——认识它的人不多，你算一个。",
+      words: [], note: "极生僻字，今仅见于部分地名；本义是「二水」。" },
+
+    "淼": { pinyin: "miǎo", structure: "品字", line: "shuihuo", rare: true, triple: true,
+      origin: "水大的样子。",
+      originSource: "《说文解字》",
+      fun: "三片水汪汪叠起来，辽阔得像大海眨眼。",
+      words: ["烟波浩淼", "淼茫"], note: "" },
+
+    "淡": { pinyin: "dàn", structure: "左右", line: "shuihuo", rare: false,
+      origin: "味薄、不浓。水表意，炎表音（兼有「火气被水平息」的画面）。",
+      originSource: "",
+      fun: "水扑进火堆，把浓浓的热情冲得淡淡的——平平淡淡也是真。",
+      words: ["淡水", "清淡", "冷淡"], note: "「水」在左边写作「氵」。" },
+
+    "泪": { pinyin: "lèi", structure: "左右", line: "shuihuo", rare: false,
+      origin: "眼里的水。会意俗字，后来转正（正字本作「淚」）。",
+      originSource: "",
+      fun: "眼睛里装不住的水，从目边滚下来——古人为眼泪造了个多形象的字。",
+      words: ["眼泪", "泪水", "泪珠"], note: "「水」在左边写作「氵」。" },
+
+    "灭": { pinyin: "miè", structure: "上下", line: "shuihuo", rare: false,
+      origin: "熄火。简化字新造会意：一横压住火。",
+      originSource: "",
+      fun: "一床大被子（一横）盖下去，火苗就被闷灭了。",
+      words: ["灭火", "消灭", "熄灭"], note: "简化字会意；繁体「滅」从水，用水灭火。" },
+
+    "因": { pinyin: "yīn", structure: "全包围", line: "shuihuo", rare: false,
+      origin: "《说文解字》：因，就也，从囗大——就着四围而扩充，引申为凭借、原因。一说本义是垫席（「茵」的古字）。",
+      originSource: "《说文解字》",
+      fun: "大大方方躺在围栏里乘凉，一切「事出有因」。",
+      words: ["因为", "原因", "因素"], note: "外框是「囗」（围 wéi）；《说文》析为「从囗大」的会意，不是形声字。" },
+
+    "尖": { pinyin: "jiān", structure: "上下", line: "shuihuo", rare: false,
+      origin: "上小下大、末端锐利。",
+      originSource: "",
+      fun: "上面小小的，下面大大的——铅笔头就这么尖。",
+      words: ["尖锐", "笔尖", "尖尖角"], note: "" },
+
+    "歪": { pinyin: "wāi", structure: "上下", line: "shuihuo", rare: false,
+      origin: "不正、偏斜。",
+      originSource: "",
+      fun: "「不正」两个字手拉手，就是歪——古人造字也会讲俏皮话。",
+      words: ["歪斜", "歪歪扭扭"], note: "" },
+
+    "天": { pinyin: "tiān", structure: "上下", line: "shuihuo", rare: false,
+      origin: "人的头顶上方；引申为天空。一横指在头顶。",
+      originSource: "《说文解字》",
+      fun: "大大的人头顶着一横——头顶之上，就是天。",
+      words: ["天空", "今天", "天气"], note: "" },
+
+    "夫": { pinyin: "fū", structure: "上下", line: "shuihuo", rare: false,
+      origin: "成年男子。一横像发簪：插簪束发，表示成年。",
+      originSource: "",
+      fun: "大人头发里插一根簪子，就长大成人啦——夫子、丈夫的「夫」。",
+      words: ["丈夫", "渔夫", "夫子"], note: "" },
+
+    "男": { pinyin: "nán", structure: "上下", line: "shuihuo", rare: false,
+      origin: "在田里出力的人。《说文解字》：男，丈夫也。从田从力。",
+      originSource: "《说文解字》",
+      fun: "在田里用力气干活的人——如今嘛，谁下田都一样棒。",
+      words: ["男生", "男女", "男子"], note: "" },
+
+    "思": { pinyin: "sī", structure: "上下", line: "shuihuo", rare: false,
+      origin: "思考。《说文解字》：思，容也。从心，囟声。",
+      originSource: "《说文解字》",
+      fun: "一颗心加一个脑袋，一起转呀转——想法就冒出来了。",
+      words: ["思考", "思念", "心思"], note: "上面其实是「囟」（脑袋），不是田——心和脑一起转才是「思」。" },
+
+    /* ===== 主线五 · 品物流形（11） ===== */
+    "古": { pinyin: "gǔ", structure: "上下", line: "pinwu", rare: false,
+      origin: "古老。《说文解字》：从十口，识前言者也——十张嘴传下来的事。",
+      originSource: "《说文解字》",
+      fun: "十张嘴巴讲过去的事，一代传一代，就是「古」。",
+      words: ["古代", "古人", "古老"], note: "" },
+
+    "胡": { pinyin: "hú", structure: "左右", line: "pinwu", rare: false,
+      origin: "兽颔下的垂肉；引申为胡须、胡琴等。古表音。",
+      originSource: "《说文解字》",
+      fun: "「古」说话，「月」听话——胡子长在下巴的肉上。",
+      words: ["胡说", "胡须", "二胡"], note: "「月」在这里是肉月旁（月字旁写法、肉字含义），跟月亮没关系。" },
+
+    "湖": { pinyin: "hú", structure: "左右", line: "pinwu", rare: false,
+      origin: "陆地上聚积的大水体。水表意，胡表音。",
+      originSource: "",
+      fun: "一大片水把「胡」字抱在怀里，波光荡漾。",
+      words: ["湖水", "西湖", "湖面"], note: "「水」在左边写作「氵」；右边的「月」还是肉月旁。" },
+
+    "甲": { pinyin: "jiǎ", structure: "独体", line: "pinwu", rare: false,
+      origin: "种子萌芽时戴的壳；引申为第一、铠甲。",
+      originSource: "《说文解字》",
+      fun: "田里的小苗往下扎根，顶破了壳——排行第一的「甲」。",
+      words: ["甲虫", "盔甲"], note: "「田字出头」组：竖笔向下出头是「甲」。" },
+
+    "由": { pinyin: "yóu", structure: "独体", line: "pinwu", rare: false,
+      origin: "经过、从……而来。",
+      originSource: "",
+      fun: "小苗换个方向，往上探头——凡事都有来路，理由的「由」。",
+      words: ["由于", "理由", "自由"], note: "「田字出头」组：竖笔向上出头是「由」。" },
+
+    "申": { pinyin: "shēn", structure: "独体", line: "pinwu", rare: false,
+      origin: "闪电之形（「电」的本字）；引申为陈述、申明。",
+      originSource: "",
+      fun: "一道闪电上下贯通——咔嚓！它后来去当了这个字：申明、申请。",
+      words: ["申明", "申请", "引申"], note: "「田字出头」组：上下都出头是「申」，像闪电贯通。" },
+
+    "相": { pinyin: "xiāng", structure: "左右", line: "pinwu", rare: false,
+      origin: "用眼睛察看树木。《说文解字》：相，省视也。",
+      originSource: "《说文解字》",
+      fun: "眼睛盯着一棵树，看它长直了没——宰相也要有双好眼睛。",
+      words: ["相互", "互相", "相貌"], note: "" },
+
+    "想": { pinyin: "xiǎng", structure: "上下", line: "pinwu", rare: false,
+      origin: "思考、想念。相表音，心表意。",
+      originSource: "",
+      fun: "眼睛看过的样子，存进心里，就是「想」。",
+      words: ["想念", "思想", "理想"], note: "形声字：相表音，心表意。" },
+
+    "尘": { pinyin: "chén", structure: "上下", line: "pinwu", rare: false,
+      origin: "飞扬的细土。简化会意：小 + 土。",
+      originSource: "",
+      fun: "小小的土粒飞起来——繁体字里，是一头小鹿跑过扬起的灰。",
+      words: ["灰尘", "尘土", "尘埃"], note: "繁体「塵」是鹿 + 土：鹿跑扬尘。" },
+
+    "灶": { pinyin: "zào", structure: "左右", line: "pinwu", rare: false,
+      origin: "做饭的设备。简化以火 + 土会意。",
+      originSource: "",
+      fun: "有火有土的地方，就能煮出一锅热汤——灶王爷的家。",
+      words: ["灶台", "炉灶", "大灶"], note: "繁体作「竈」，简化字用火 + 土重新会意。" },
+
+    "里": { pinyin: "lǐ", structure: "上下", line: "pinwu", rare: false,
+      origin: "居住的地方；有田有土，方有人家。《说文解字》：里，居也。",
+      originSource: "《说文解字》",
+      fun: "有田有土才有人家，乡里乡亲住在一起。",
+      words: ["里面", "这里", "邻里"], note: "" }
+  },
+
+  /* ---------- 配方表（53 对部件 → 62 字） ----------
+   * a、b 与顺序无关，运行时排序建立无序键索引。 */
+  recipes: [
+    /* 主线一 草木之间 */
+    { a: "木", b: "木", results: ["林"] },
+    { a: "林", b: "木", results: ["森"] },
+    { a: "木", b: "一", results: ["本", "末", "未"],
+      hints: { "本": "一在树根", "末": "一在树梢", "未": "短横在上，新芽初生" } },
+    { a: "人", b: "木", results: ["休"] },
+    { a: "口", b: "木", results: ["困", "呆", "杏"],
+      hints: { "困": "口包木（外框是囗）", "呆": "口在木上", "杏": "口在木下" } },
+    { a: "田", b: "木", results: ["果"] },
+    { a: "木", b: "果", results: ["棵"] },
+    { a: "木", b: "古", results: ["枯"] },
+    { a: "林", b: "火", results: ["焚"] },
+
+    /* 主线二 日月星辰 */
+    { a: "日", b: "月", results: ["明"] },
+    { a: "日", b: "日", results: ["昌"] },
+    { a: "昌", b: "日", results: ["晶"] },
+    { a: "日", b: "一", results: ["旦"] },
+    { a: "日", b: "木", results: ["杲", "杳"],
+      hints: { "杲": "日在木上", "杳": "日在木下" } },
+    { a: "月", b: "月", results: ["朋"] },
+    { a: "日", b: "十", results: ["早"] },
+    { a: "日", b: "正", results: ["是"] },
+
+    /* 主线三 人来人往 */
+    { a: "人", b: "人", results: ["从"] },
+    { a: "从", b: "人", results: ["众"] },
+    { a: "人", b: "口", results: ["囚"] },
+    { a: "口", b: "口", results: ["吕", "回"],
+      hints: { "吕": "两口上下分立", "回": "大口包小口" } },
+    { a: "吕", b: "口", results: ["品"] },
+    { a: "门", b: "人", results: ["闪"] },
+    { a: "门", b: "口", results: ["问"] },
+    { a: "门", b: "日", results: ["间"] },
+    { a: "门", b: "心", results: ["闷"] },
+    { a: "门", b: "木", results: ["闲"] },
+    { a: "从", b: "土", results: ["坐"] },
+    { a: "力", b: "口", results: ["加"] },
+    { a: "口", b: "土", results: ["吐"] },
+
+    /* 主线四 水火之间 */
+    { a: "火", b: "火", results: ["炎"] },
+    { a: "炎", b: "火", results: ["焱"] },
+    { a: "焱", b: "火", results: ["燚"] },
+    { a: "水", b: "水", results: ["沝"] },
+    { a: "沝", b: "水", results: ["淼"] },
+    { a: "炎", b: "水", results: ["淡"] },
+    { a: "水", b: "目", results: ["泪"] },
+    { a: "火", b: "一", results: ["灭"] },
+    { a: "口", b: "大", results: ["因"] },
+    { a: "小", b: "大", results: ["尖"] },
+    { a: "不", b: "正", results: ["歪"] },
+    { a: "一", b: "大", results: ["天", "夫"],
+      hints: { "天": "一在头顶（天）", "夫": "一插发间（簪）" } },
+    { a: "田", b: "力", results: ["男"] },
+    { a: "田", b: "心", results: ["思"] },
+
+    /* 主线五 品物流形 */
+    { a: "十", b: "口", results: ["古"] },
+    { a: "古", b: "月", results: ["胡"] },
+    { a: "胡", b: "水", results: ["湖"] },
+    { a: "田", b: "十", results: ["甲", "由", "申"],
+      hints: { "甲": "竖笔向下出头", "由": "竖笔向上出头", "申": "上下都出头" } },
+    { a: "木", b: "目", results: ["相"] },
+    { a: "相", b: "心", results: ["想"] },
+    { a: "小", b: "土", results: ["尘"] },
+    { a: "火", b: "土", results: ["灶"] },
+    { a: "田", b: "土", results: ["里"] }
+  ],
+
+  /* ---------- 解锁表 ----------
+   * type: got(合成某字) / firstTriple(第一个三叠字) / count(集字数)
+   *      / lineCount(某主线集字数) */
+  unlocks: [
+    { when: { type: "got", char: "明" },      give: ["一", "水"],
+      toast: "日月同辉！新部件「一」和「水」来了" },
+    { when: { type: "got", char: "休" },      give: ["火", "田"],
+      toast: "靠在树边歇一歇！「火」和「田」加入库存" },
+    { when: { type: "firstTriple" },          give: ["心", "力"],
+      toast: "第一个三叠字！「心」和「力」加入库存" },
+    { when: { type: "count", n: 20 },         give: ["小", "大", "不", "正"],
+      toast: "已收集 20 个字！四个新部件来了" },
+    { when: { type: "count", n: 30 },         give: ["门", "土"],
+      toast: "已收集 30 个字！「门」和「土」来了" },
+    { when: { type: "count", n: 40 },         give: ["十", "目"],
+      toast: "已收集 40 个字！收官部件「十」和「目」来了" },
+    { when: { type: "lineCount", line: "shuihuo", n: 5 }, give: [],
+      toast: "水火之间已通五关——六个三叠字在召唤你……" }
+  ],
+
+  /* ---------- 成就（8） ---------- */
+  achievements: [
+    { id: "first",     name: "初见",     icon: "🌱",
+      desc: "合成第一个字",        rule: { type: "count", n: 1 } },
+    { id: "triple1",   name: "三生万物", icon: "🌲",
+      desc: "合成第一个三叠字",    rule: { type: "firstTriple" } },
+    { id: "panel",     name: "同字不同命", icon: "🤔",
+      desc: "第一次用选择面板选出隐藏的字", rule: { type: "firstPanel" } },
+    { id: "sunmoon",   name: "日月同辉", icon: "🌙",
+      desc: "合成「明」和「昌」",  rule: { type: "chars", chars: ["明", "昌"] } },
+    { id: "waterfire", name: "水火交融", icon: "🔥",
+      desc: "水火主线集齐任意 5 字", rule: { type: "lineCount", line: "shuihuo", n: 5 } },
+    { id: "thinker",   name: "独立思考", icon: "🦉",
+      desc: "不用任何提示，收集 30 个字", rule: { type: "count", n: 30, noHints: true } },
+    { id: "seeker",    name: "寻珍者",   icon: "💎",
+      desc: "收集全部生僻字",      rule: { type: "allRare" } },
+    { id: "all",       name: "字字生花", icon: "📖",
+      desc: "图鉴全部集满",        rule: { type: "all" } }
+  ],
+
+  /* ---------- 结局 ---------- */
+  endings: {
+    minor: { name: "小通关", triples: ["森", "晶", "众", "品", "焱", "淼"],
+             title: "三生万物" },
+    major: { name: "大通关", title: "字字生花" }
+  },
+
+  /* ---------- 失败提示文案（分级） ---------- */
+  failTexts: {
+    both:  "这两个字暂时不认识对方，换个朋友试试",
+    one:   "「{a}」已经交完朋友啦",
+    self:  "两个「{a}」站在一起……好像能成「{b}」？"
+  },
+
+  /* ---------- 引导文案 ---------- */
+  guide: {
+    steps: [
+      { id: 1, text: "把「日」和「月」拖到一起，看看会发生什么" },
+      { id: 2, text: "合成成功啦！字源卡会告诉你这个字的故事" },
+      { id: 3, text: "新部件来了！把它们拖出来随便试试" },
+      { id: 4, text: "同样的部件，摆的位置不一样，字也不一样——选一个吧" },
+      { id: 5, text: "三个一样的字叠起来，叫三叠字——集齐六个就是小通关！" }
+    ],
+    softHint: "木和木是好朋友"
+  }
+};
+
+/* ---------- 运行时索引：无序键（a|b 排序后拼接） ---------- */
+(function buildIndex() {
+  var idx = {};
+  ZZSH.DATA.recipes.forEach(function (r) {
+    var key = [r.a, r.b].sort().join("|");
+    if (idx[key]) { throw new Error("配方键冲突: " + key); }
+    idx[key] = r;
+  });
+  ZZSH.recipeIndex = idx;
+})();
+
+/* 便捷查询 */
+ZZSH.findRecipe = function (a, b) {
+  return ZZSH.recipeIndex[[a, b].sort().join("|")] || null;
+};
