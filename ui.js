@@ -681,6 +681,9 @@
     $("#quiz-boost").classList.remove("hidden");
     $("#quiz-reveal").classList.add("hidden");
     $("#quiz-tokens").textContent = ZZSH.state.data.stats.quizTokens || 0;
+    /* 弹面板时收掉右侧字源卡：描述即题目，多余的卡只会争夺注意力 */
+    var existCard = $("#cardcol .char-card");
+    if (existCard) $("#cardcol").innerHTML = TIP_HTML;
     mask.classList.remove("hidden");
     renderQuizSlots();
     ZZSH.fx.sndTap();

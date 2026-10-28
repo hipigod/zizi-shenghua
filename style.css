@@ -897,7 +897,6 @@ button { font-family: inherit; cursor: pointer; }
 }
 .quiz-slot.filled { border-style: solid; background: #fffdf6; border-color: var(--cinnabar); }
 .quiz-plus { font-size: 26px; color: var(--ink-soft); font-family: var(--font-kai); }
-.quiz-wall-label { font-size: 12px; color: var(--ink-soft); text-align: center; margin-bottom: 8px; }
 .quiz-wall {
   display: flex;
   flex-wrap: wrap;
