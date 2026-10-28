@@ -663,11 +663,12 @@
       '<div class="quiz-slot" data-slot="0"></div>' +
       '<span class="quiz-plus">+</span>' +
       '<div class="quiz-slot" data-slot="1"></div>';
-    /* 部件墙：配方两部件必在 + 已解锁部件 + 已收集字（丰富干扰） */
+    /* 部件墙：配方两部件必在 + 已解锁部件。
+     * 不放已收集字做干扰（设计修正）：面板语义是"选部件"，整字混入既混乱，
+     * 且含答案部件的整字（如 休=人+木）会反泄组合方式。 */
     var mats = {};
     [h.recipe.a, h.recipe.b].forEach(function (c) { mats[c] = true; });
     ZZSH.state.data.unlockedParts.forEach(function (c) { mats[c] = true; });
-    ZZSH.state.data.got.slice(-10).forEach(function (c) { mats[c] = true; });
     var wall = $("#quiz-wall");
     wall.innerHTML = "";
     Object.keys(mats).forEach(function (c) {
