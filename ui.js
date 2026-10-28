@@ -568,8 +568,11 @@
     }
   }
 
-  /* localX/localY：新字块在画布内的左上角坐标 */
-  function afterMergeVisual(res, isTriple, localX, localY) {
+  /* localX/localY：新字块在画布内的左上角坐标。
+   * opts.silent：答题收录（R3 面板）走轻量庆祝——不弹字源卡。
+   * 面板里玩家刚亲手拼出这个字，转身再弹整张卡是噪音（用户多次明确否决）。 */
+  function afterMergeVisual(res, isTriple, localX, localY, opts) {
+    var silent = opts && opts.silent;
     var nt = ZZSH.board.createTile(res.result, localX, localY, { flash: true });
     /* 特效跟随新字块的实际位置（createTile 已夹紧） */
     var er = nt.el.getBoundingClientRect();
@@ -596,7 +599,7 @@
 
     if (res.isNew) {
       renderInventory();
-      showCard(res.result);
+      if (!silent) showCard(res.result);
       renderProgress();
 
       /* 解锁 toast（部件） */
@@ -717,7 +720,7 @@
       closeQuizPanel();
       var res = ZZSH.engine.finishMergeByQuiz(quizState.target);
       if (res) afterMergeVisual(res, !!D.chars[quizState.target].triple,
-        window.innerWidth / 2, window.innerHeight / 3);
+        window.innerWidth / 2, window.innerHeight / 3, { silent: true });
     } else {
       ZZSH.fx.sndFail();
       var panel = $("#quiz-panel");
