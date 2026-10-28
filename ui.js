@@ -373,13 +373,21 @@
   }
 
   /* ================= R4 字族树 ================= */
+  /* 族根必须覆盖全部字：原先只有 6 个根，21 个字（朋、加、另、叻、肝、胆、天、
+   * 夫、因、尖、歪、思、问、闷、闩、吕、回、品、吞、否、吐）在树里根本不显示。
+   * 现按 family 实际分布列全 12 个根；「大」「不」字数太少，合并成一个展示框。 */
   var TREE_ROOTS = [
     { root: "木", name: "木之族" },
     { root: "日", name: "日之族" },
+    { root: "月", name: "月之族" },
     { root: "人", name: "人之族" },
+    { root: "口", name: "口之族" },
+    { root: "心", name: "心之族" },
     { root: "火", name: "火之族" },
     { root: "水", name: "水之族" },
-    { root: "十", name: "十之族" }
+    { root: "十", name: "十之族" },
+    { root: "门", name: "门之族" },
+    { roots: ["大", "不"], name: "大字之族" }
   ];
   function renderFamilyTree() {
     var host = $("#codex-tree");
@@ -416,7 +424,13 @@
     }
 
     TREE_ROOTS.forEach(function (t) {
-      var members = collectFamilyNodes(t.root);
+      var roots = t.roots || [t.root];
+      var members = [];
+      roots.forEach(function (r) {
+        collectFamilyNodes(r).forEach(function (c) {
+          if (members.indexOf(c) < 0) members.push(c);
+        });
+      });
       if (!members.length) return;
       var gotCount = members.filter(function (c) {
         return D.chars[c] && st.got.includes(c);
@@ -426,21 +440,22 @@
       box.className = "fam-box";
       var head = document.createElement("div");
       head.className = "fam-head";
-      head.innerHTML = '<span class="fam-root">' + t.root + '</span>' +
+      head.innerHTML = '<span class="fam-root">' + roots.join("·") + '</span>' +
         '<b>' + t.name + '</b><span class="fam-count">' + gotCount + "/" + total + "</span>" +
         (gotCount >= total ? '<span class="fam-bloom">🌸</span>' : "");
       box.appendChild(head);
 
       /* 纵向层级布局：根在顶，逐层往下；同层横排 */
       var layers = [];
-      (function assign(n, depth) {
+      var assign = function (n, depth) {
         var kids = childrenOf(n);
         kids.forEach(function (k) {
           if (!layers[depth]) layers[depth] = [];
           layers[depth].push({ node: k, parent: n });
           assign(k, depth + 1);
         });
-      })(t.root, 0);
+      };
+      roots.forEach(function (r) { assign(r, 0); });
 
       var tree = document.createElement("div");
       tree.className = "fam-tree";

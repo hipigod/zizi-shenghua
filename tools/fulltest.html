@@ -21,7 +21,7 @@
 <script>
 var $ = function (s) { return document.querySelector(s); };
 var f = document.getElementById("frame");
-var ROWS = [], HEAD = ["字", "可合成", "字源卡", "笔顺动画", "据义造字", "提示可命中", "图鉴可见", "笔画数"];
+var ROWS = [], HEAD = ["字", "可合成", "字源卡", "笔顺动画", "据义造字", "提示可命中", "图鉴可见", "字族树", "笔画数"];
 var HW_BASE = "http://localhost:8765/tools/_hwdata/";
 
 function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
@@ -121,6 +121,14 @@ f.addEventListener("load", function () {
       cells[el.textContent.trim()] = true;
     });
 
+    // ---- 6b. 字族树：每个字都要能在树上找到 ----
+    var tab = doc.getElementById("tab-tree");
+    if (tab) tab.click();
+    var fam = {};
+    [].slice.call(doc.querySelectorAll(".fam-node")).forEach(function (el) {
+      fam[el.textContent.trim()] = true;
+    });
+
     // ---- 7. 逐字：字源卡 + 笔顺动画 ----
     var i = 0, done = 0;
     function next() {
@@ -186,6 +194,7 @@ f.addEventListener("load", function () {
           r.quiz === true ? true : r.quiz,
           !!hintPool[c],
           !!cells[c],
+          !!fam[c],
           strokesOK === true ? true : strokesOK];
       });
       render();

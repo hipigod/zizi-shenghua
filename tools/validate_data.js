@@ -297,6 +297,42 @@ function warn(msg) { warns.push(msg); }
     if (!ok) bad.push(`${c} family="${p}" 不在其配方中`);
   });
   console.log(`10. R4 family 字族：${chars.length} 字，${bad.length ? "问题：" + bad.join("、") : "全挂载无环，parent均在配方内，通过"}`);
+
+  /* ---------- 11. 字族树根覆盖（防漏字回归） ----------
+   * ui.js 的 TREE_ROOTS 必须与数据里的族根一一对应，否则那些字在字族树里不显示。
+   * 历史上这里只写了 6 个根，导致 21 个字（22%）从树上消失。 */
+  (function () {
+    const uiSrc = fs.readFileSync(path.join(__dirname, "..", "ui.js"), "utf8");
+    const decl = uiSrc.slice(uiSrc.indexOf("var TREE_ROOTS"), uiSrc.indexOf("function renderFamilyTree"));
+    const declared = new Set();
+    let m;
+    const re = /roots?:\s*\[?\s*"([^"]+)"(?:\s*,\s*"([^"]+)")?/g;
+    while ((m = re.exec(decl))) {
+      declared.add(m[1]);
+      if (m[2]) declared.add(m[2]);
+    }
+    // 数据里实际的族根 = family 指向非字表的节点
+    const actual = new Set();
+    chars.forEach(c => {
+      const p = D.chars[c].family;
+      if (!charSet.has(p)) actual.add(p);
+    });
+    const missing = [...actual].filter(r => !declared.has(r));
+    const covered = new Set();
+    declared.forEach(r => {
+      (function walk(n) {
+        if (covered.has(n)) return;
+        covered.add(n);
+        chars.forEach(c => { if (D.chars[c].family === n) walk(c); });
+      })(r);
+    });
+    const orphan = chars.filter(c => !covered.has(c));
+    if (missing.length) err(`字族树未声明的族根：${missing.join("、")}`);
+    if (orphan.length) err(`字族树显示不到的字（${orphan.length}）：${orphan.join("、")}`);
+    console.log(`11. 字族树根覆盖：声明 ${declared.size} 根 / 实际 ${actual.size} 根，` +
+      `可达 ${chars.length - orphan.length}/${chars.length} 字，` +
+      (missing.length || orphan.length ? "有漏字！" : "通过"));
+  })();
   if (bad.length) err(`R4 family 校验失败：${bad.join("、")}`);
 })();
 
