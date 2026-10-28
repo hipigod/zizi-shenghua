@@ -59,76 +59,7 @@ ZZSH.DATA = {
     "目": { pinyin: "mù",  note: "眼睛竖起来的样子" }
   },
 
-  /* ---------- 62 个合成字 ---------- */
-  partInfo: {
-    "日": { pinyin: "rì",  note: "太阳的象形，圆中一点" },
-    "月": { pinyin: "yuè", note: "月亮的象形，弯弯一钩" },
-    "木": { pinyin: "mù",  note: "树木的象形，上枝下根" },
-    "人": { pinyin: "rén", note: "侧立的人形，一撇一捺" },
-    "口": { pinyin: "kǒu", note: "张开的嘴巴" },
-    "一": { pinyin: "yī",  note: "一个指事符号，常表示位置" },
-    "水": { pinyin: "shuǐ", note: "流水之形；到左边写作「氵」" },
-    "火": { pinyin: "huǒ", note: "火苗之形，象跳跃的光" },
-    "田": { pinyin: "tián", note: "阡陌纵横的田地" },
-    "心": { pinyin: "xīn", note: "心脏之形；到左边写作「忄」" },
-    "力": { pinyin: "lì",  note: "手臂发力之形" },
-    "小": { pinyin: "xiǎo", note: "细小的点粒" },
-    "大": { pinyin: "dà",  note: "正面站立、张开手臂的人" },
-    "不": { pinyin: "bù",  note: "花萼之形（一说），借为否定词" },
-    "正": { pinyin: "zhèng", note: "脚趾向着目标走，不偏不斜" },
-    "门": { pinyin: "mén", note: "两扇门之形；简化为「门」" },
-    "土": { pinyin: "tǔ",  note: "地面上的土堆" },
-    "十": { pinyin: "shí", note: "一横一竖，表示完整、多" },
-    "目": { pinyin: "mù",  note: "眼睛竖起来的样子" }
-  },
-
-  /* ---------- 62 个合成字 ---------- */
-  partInfo: {
-    "日": { pinyin: "rì",  note: "太阳的象形，圆中一点" },
-    "月": { pinyin: "yuè", note: "月亮的象形，弯弯一钩" },
-    "木": { pinyin: "mù",  note: "树木的象形，上枝下根" },
-    "人": { pinyin: "rén", note: "侧立的人形，一撇一捺" },
-    "口": { pinyin: "kǒu", note: "张开的嘴巴" },
-    "一": { pinyin: "yī",  note: "一个指事符号，常表示位置" },
-    "水": { pinyin: "shuǐ", note: "流水之形；到左边写作「氵」" },
-    "火": { pinyin: "huǒ", note: "火苗之形，象跳跃的光" },
-    "田": { pinyin: "tián", note: "阡陌纵横的田地" },
-    "心": { pinyin: "xīn", note: "心脏之形；到左边写作「忄」" },
-    "力": { pinyin: "lì",  note: "手臂发力之形" },
-    "小": { pinyin: "xiǎo", note: "细小的点粒" },
-    "大": { pinyin: "dà",  note: "正面站立、张开手臂的人" },
-    "不": { pinyin: "bù",  note: "花萼之形（一说），借为否定词" },
-    "正": { pinyin: "zhèng", note: "脚趾向着目标走，不偏不斜" },
-    "门": { pinyin: "mén", note: "两扇门之形；简化为「门」" },
-    "土": { pinyin: "tǔ",  note: "地面上的土堆" },
-    "十": { pinyin: "shí", note: "一横一竖，表示完整、多" },
-    "目": { pinyin: "mù",  note: "眼睛竖起来的样子" }
-  },
-
-  /* ---------- 62 个合成字 ---------- */
-  partInfo: {
-    "日": { pinyin: "rì",  note: "太阳的象形，圆中一点" },
-    "月": { pinyin: "yuè", note: "月亮的象形，弯弯一钩" },
-    "木": { pinyin: "mù",  note: "树木的象形，上枝下根" },
-    "人": { pinyin: "rén", note: "侧立的人形，一撇一捺" },
-    "口": { pinyin: "kǒu", note: "张开的嘴巴" },
-    "一": { pinyin: "yī",  note: "一个指事符号，常表示位置" },
-    "水": { pinyin: "shuǐ", note: "流水之形；到左边写作「氵」" },
-    "火": { pinyin: "huǒ", note: "火苗之形，象跳跃的光" },
-    "田": { pinyin: "tián", note: "阡陌纵横的田地" },
-    "心": { pinyin: "xīn", note: "心脏之形；到左边写作「忄」" },
-    "力": { pinyin: "lì",  note: "手臂发力之形" },
-    "小": { pinyin: "xiǎo", note: "细小的点粒" },
-    "大": { pinyin: "dà",  note: "正面站立、张开手臂的人" },
-    "不": { pinyin: "bù",  note: "花萼之形（一说），借为否定词" },
-    "正": { pinyin: "zhèng", note: "脚趾向着目标走，不偏不斜" },
-    "门": { pinyin: "mén", note: "两扇门之形；简化为「门」" },
-    "土": { pinyin: "tǔ",  note: "地面上的土堆" },
-    "十": { pinyin: "shí", note: "一横一竖，表示完整、多" },
-    "目": { pinyin: "mù",  note: "眼睛竖起来的样子" }
-  },
-
-  /* ---------- 62 个合成字 ---------- */
+  /* ---------- 67 个合成字 ---------- */
   chars: {
 
     /* ===== 主线一 · 草木之间（13） ===== */
@@ -344,6 +275,19 @@ ZZSH.DATA = {
       fun: "嘴上多使一份力，话就多了几分——不过我们更喜欢用它做加法。",
       words: ["加法", "增加", "加油"], note: "" },
 
+    /* 另、叻：与「加」共用口和力，靠位置区分 */
+    "另": { pinyin: "lìng", structure: "上下", line: "renwu", rare: false, strokes: 5, quizMode: "full", quizDesc: "不在刚才那些里面，是别的、分开的", family: "口",
+      origin: "另外。口在上、力在下，本义是「分开、另行」。",
+      originSource: "",
+      fun: "嘴上说「这个不行」，手上再使劲另起一摊——这就是「另」。",
+      words: ["另外", "另类", "另行"], note: "与「加」「叻」同用口和力，靠位置区分：另是口上力下。" },
+
+    "叻": { pinyin: "lè", structure: "左右", line: "renwu", rare: true, strokes: 5, quizMode: "assist", quizDesc: "夸一个人嘴巴厉害、办事利索", assistPart: "口", family: "力",
+      origin: "方言字。粤语读 lek，表示聪明能干；又用于「石叻」——新加坡的旧译名（源自马来语 selat「海峡」）。",
+      originSource: "",
+      fun: "左边一张嘴，右边一把力——嘴上说得漂亮，手上又有力气，这人真「叻」。",
+      words: ["叻仔", "石叻"], note: "生僻彩蛋。与「加」是镜像：加是力在左，叻是口在左。" },
+
     "吐": { pinyin: "tǔ", structure: "左右", line: "renwu", rare: false, strokes: 6, quizMode: "assist", quizDesc: "春蚕从嘴里不停地拉出细丝", assistPart: "口", family: "口",
       origin: "从口而出。口表意，土表音。",
       originSource: "",
@@ -448,6 +392,25 @@ ZZSH.DATA = {
       fun: "十张嘴巴讲过去的事，一代传一代，就是「古」。",
       words: ["古代", "古人", "古老"], note: "" },
 
+    /* 田、土、干：由部件「十」合成而来，合成后立刻可作为原料使用 */
+    "田": { pinyin: "tián", structure: "独体", line: "pinwu", rare: false, strokes: 5, quizMode: "full", quizDesc: "一块地被小路横竖切成格子", family: "十",
+      origin: "耕种的土地。《说文解字》：田，陈也，树谷曰田——阡陌纵横，整齐排列。",
+      originSource: "《说文解字》",
+      fun: "先人把一整块地划成方格子，中间十字是小路，四周是边界——这就是「田」。",
+      words: ["田地", "水田", "田野"], note: "口是地块的外框，十是田间的纵横小路。" },
+
+    "土": { pinyin: "tǔ", structure: "独体", line: "pinwu", rare: false, strokes: 3, quizMode: "full", quizDesc: "地面上鼓起来的一小坨泥", family: "十",
+      origin: "土地。《说文解字》：土，地之吐生物者也——地面上能长出东西的那一层。",
+      originSource: "《说文解字》",
+      fun: "一横是地面，一竖加一横是地面上鼓起的土堆——种什么活什么。",
+      words: ["土地", "泥土", "土豆"], note: "土既是部件也是字：拼出来以后，就能拿它去造「尘」「灶」「坐」「里」了。" },
+
+    "干": { pinyin: "gān", structure: "独体", line: "pinwu", rare: false, strokes: 3, quizMode: "full", quizDesc: "一根木棍，古时候拿来挡刀挡枪", family: "十",
+      origin: "盾牌。《说文解字》：干，犯也——本义是抵御的盾，后引申为冒犯、干涉。",
+      originSource: "《说文解字》",
+      fun: "一根木棍横在头顶，挡住飞来的石头——最早的盾牌就叫「干」。",
+      words: ["干净", "饼干", "干活"], note: "与「土」只差一横的位置：干是横在上、竖笔悬空。" },
+
     "胡": { pinyin: "hú", structure: "左右", line: "pinwu", rare: false, strokes: 9, quizMode: "skip", family: "古",
       origin: "兽颔下的垂肉；引申为胡须、胡琴等。古表音。",
       originSource: "《说文解字》",
@@ -509,7 +472,7 @@ ZZSH.DATA = {
       words: ["里面", "这里", "邻里"], note: "" }
   },
 
-  /* ---------- 配方表（53 对部件 → 62 字） ----------
+  /* ---------- 配方表（54 对部件 → 67 字） ----------
    * a、b 与顺序无关，运行时排序建立无序键索引。 */
   recipes: [
     /* 主线一 草木之间 */
@@ -549,7 +512,8 @@ ZZSH.DATA = {
     { a: "门", b: "心", results: ["闷"] },
     { a: "门", b: "木", results: ["闲"] },
     { a: "从", b: "土", results: ["坐"] },
-    { a: "力", b: "口", results: ["加"] },
+    { a: "力", b: "口", results: ["加", "另", "叻"],
+      hints: { "加": "力在左，口在右", "另": "口在上，力在下", "叻": "口在左，力在右" } },
     { a: "口", b: "土", results: ["吐"] },
 
     /* 主线四 水火之间 */
@@ -570,7 +534,10 @@ ZZSH.DATA = {
     { a: "田", b: "心", results: ["思"] },
 
     /* 主线五 品物流形 */
-    { a: "十", b: "口", results: ["古"] },
+    { a: "十", b: "口", results: ["古", "田"],
+      hints: { "古": "十在口上", "田": "十嵌进囗里，横竖把地分成格" } },
+    { a: "一", b: "十", results: ["干", "土"],
+      hints: { "干": "横在十上，竖笔悬空", "土": "横在十下，竖笔落地" } },
     { a: "古", b: "月", results: ["胡"] },
     { a: "胡", b: "水", results: ["湖"] },
     { a: "田", b: "十", results: ["甲", "由", "申"],
@@ -588,16 +555,16 @@ ZZSH.DATA = {
   unlocks: [
     { when: { type: "got", char: "明" },      give: ["一", "水"],
       toast: "日月同辉！新部件「一」和「水」来了" },
-    { when: { type: "got", char: "休" },      give: ["火", "田"],
-      toast: "靠在树边歇一歇！「火」和「田」加入库存" },
+    { when: { type: "got", char: "休" },      give: ["火", "十"],
+      toast: "靠在树边歇一歇！「火」和「十」加入库存" },
     { when: { type: "firstTriple" },          give: ["心", "力"],
       toast: "第一个三叠字！「心」和「力」加入库存" },
     { when: { type: "count", n: 20 },         give: ["小", "大", "不", "正"],
       toast: "已收集 20 个字！四个新部件来了" },
-    { when: { type: "count", n: 30 },         give: ["门", "土"],
-      toast: "已收集 30 个字！「门」和「土」来了" },
-    { when: { type: "count", n: 40 },         give: ["十", "目"],
-      toast: "已收集 40 个字！收官部件「十」和「目」来了" },
+    { when: { type: "count", n: 30 },         give: ["门"],
+      toast: "已收集 30 个字！「门」来了" },
+    { when: { type: "count", n: 40 },         give: ["目"],
+      toast: "已收集 40 个字！收官部件「目」来了" },
     { when: { type: "lineCount", line: "shuihuo", n: 5 }, give: [],
       toast: "水火之间已通五关——六个三叠字在召唤你……" }
   ],

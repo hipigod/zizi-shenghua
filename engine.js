@@ -290,6 +290,15 @@
     var st = ZZSH.state.data;
     var validIds = D.achievements.map(function (a) { return a.id; });
     st.achievements = st.achievements.filter(function (id) { return validIds.indexOf(id) >= 0; });
+    /* 「田」「土」由解锁件改为合成字：老存档里已解锁的，直接转为已收集，
+       避免出现部件组和主线组的重复字块，同时老玩家不丢原料。 */
+    ["田", "土"].forEach(function (c) {
+      var i = st.unlockedParts.indexOf(c);
+      if (i >= 0) {
+        st.unlockedParts.splice(i, 1);
+        if (st.got.indexOf(c) < 0) st.got.push(c);
+      }
+    });
     /* 解锁表重新判定（flags 已命中的条件也要补发部件，防止旧存档缺部件卡死） */
     D.unlocks.forEach(function (u) {
       var key = "unlock_" + JSON.stringify(u.when);

@@ -53,6 +53,8 @@
     var items = document.createElement("div");
     items.className = "inv-items";
     st.unlockedParts.forEach(function (p) {
+      // 已转成合成字并收集到的（田、土），只在主线组显示，避免重复字块
+      if (D.chars[p] && st.got.indexOf(p) >= 0) return;
       var t = document.createElement("div");
       t.className = "tile";
       t.textContent = p;

@@ -1,0 +1,96 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>smoke</title>
+<style>
+  body { margin:0; font:14px system-ui; background:#fff; color:#111; }
+  #frame { width:1280px; height:800px; border:0; }
+  #log { padding:10px 14px; white-space:pre-wrap; line-height:1.7; }
+  .ok { color:#2e7d32; } .bad { color:#c62828; font-weight:700; }
+  #done { display:none; }
+</style>
+<iframe id="frame" src="../index.html"></iframe>
+<div id="log">running…</div>
+<div id="done">SMOKE-DONE</div>
+<script>
+var logEl = document.getElementById("log");
+var lines = [];
+function L(ok, msg) {
+  lines.push((ok ? '<span class="ok">OK  </span> ' : '<span class="bad">FAIL</span> ') + msg);
+  logEl.innerHTML = lines.join("\n");
+}
+var errs = [];
+window.addEventListener("error", function (e) { errs.push("window.onerror: " + e.message); });
+
+var f = document.getElementById("frame");
+f.addEventListener("load", function () {
+  var w = f.contentWindow;
+  var Z = w.ZZSH;
+  if (!Z) { L(false, "ZZSH 未挂载"); finish(); return; }
+
+  // 捕获 iframe 内的运行时报错
+  w.addEventListener("error", function (e) { errs.push("iframe onerror: " + e.message); });
+
+  try {
+    L(true, "ZZSH 已挂载，字表 " + Object.keys(Z.DATA.chars).length + " 字，配方 " + Z.DATA.recipes.length + " 条");
+
+    // 给足原料（模拟已解锁到「十」）
+    ["十", "一", "力", "火", "小"].forEach(function (p) {
+      if (Z.state.data.unlockedParts.indexOf(p) < 0) Z.state.data.unlockedParts.push(p);
+    });
+
+    // 1) 十 + 口 → 古 / 田
+    var r1 = Z.engine.tryMerge("十", "口");
+    L(!!(r1.ok && r1.needPanel), "十+口 触发选择面板");
+    var rs1 = r1.recipe ? r1.recipe.results : [];
+    L(rs1.indexOf("古") >= 0 && rs1.indexOf("田") >= 0, "十+口 候选含 古/田（实际 " + rs1.join(",") + "）");
+    var m1 = Z.engine.resolvePanelChoice(r1.recipe, "田");
+    L(m1.ok && m1.result === "田" && m1.isNew, "选「田」合成成功");
+
+    // 2) 一 + 十 → 干 / 土
+    var r2 = Z.engine.tryMerge("一", "十");
+    var rs2 = r2.recipe ? r2.recipe.results : [];
+    L(rs2.indexOf("干") >= 0 && rs2.indexOf("土") >= 0, "一+十 候选含 干/土（实际 " + rs2.join(",") + "）");
+    var m2 = Z.engine.resolvePanelChoice(r2.recipe, "土");
+    L(m2.ok && m2.result === "土" && m2.isNew, "选「土」合成成功");
+
+    // 3) 口 + 力 → 加 / 另 / 叻
+    var r3 = Z.engine.tryMerge("口", "力");
+    var rs3 = r3.recipe ? r3.recipe.results : [];
+    L(rs3.length === 3 && rs3.indexOf("叻") >= 0 && rs3.indexOf("另") >= 0,
+      "口+力 候选含 加/另/叻（实际 " + rs3.join(",") + "）");
+    var m3 = Z.engine.resolvePanelChoice(r3.recipe, "叻");
+    L(m3.ok && m3.result === "叻" && m3.isNew, "选「叻」合成成功");
+
+    // 4) 田、土作为原料可继续合成
+    var r4 = Z.engine.tryMerge("田", "木");
+    L(r4.ok && r4.result === "果", "田+木 → 果（田已可作原料）");
+    var r5 = Z.engine.tryMerge("小", "土");
+    L(r5.ok && r5.result === "尘", "小+土 → 尘（土已可作原料）");
+
+    // 5) 库存渲染：田、土、叻 出现且不重复
+    Z.ui.renderInventory();
+    var tiles = [].slice.call(f.contentDocument.querySelectorAll(".inventory .tile"))
+      .map(function (t) { return t.dataset.char; });
+    function countOf(c) { return tiles.filter(function (x) { return x === c; }).length; }
+    L(countOf("田") === 1, "库存中「田」出现 1 次（实际 " + countOf("田") + "）");
+    L(countOf("土") === 1, "库存中「土」出现 1 次（实际 " + countOf("土") + "）");
+    L(countOf("叻") === 1, "库存中「叻」出现 1 次（实际 " + countOf("叻") + "）");
+
+    // 6) 字源卡可取
+    L(Z.DATA.chars["田"] && Z.DATA.chars["土"] && Z.DATA.chars["叻"], "田/土/叻 字卡数据齐备");
+    Z.ui.showCard("叻");
+    L(!!f.contentDocument.querySelector(".char-card .cc-char"), "「叻」字源卡可弹出");
+
+    // 7) 字体已加载
+    var fam = f.contentDocument.fonts && f.contentDocument.fonts.check('16px "LXGW WenKai"');
+    L(!!fam, "霞鹜文楷子集已加载");
+  } catch (e) {
+    L(false, "异常：" + e.message);
+    errs.push("throw: " + e.message);
+  }
+  L(errs.length === 0, errs.length ? "控制台报错：" + errs.join(" | ") : "控制台无报错");
+  finish();
+});
+
+function finish() { document.getElementById("done").style.display = "block"; }
+</script>
