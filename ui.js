@@ -681,9 +681,12 @@
     $("#quiz-boost").classList.remove("hidden");
     $("#quiz-reveal").classList.add("hidden");
     $("#quiz-tokens").textContent = ZZSH.state.data.stats.quizTokens || 0;
-    /* 弹面板时收掉右侧字源卡：描述即题目，多余的卡只会争夺注意力 */
+    /* 弹面板时收掉已有字源卡——两条路径都要收：
+     * 桌面三栏清 #cardcol；窄窗/触屏收 #card-drawer 抽屉（上轮只清了前者，
+     * 670px 窗口下抽屉全屏垫在面板后面，用户抓个正着） */
     var existCard = $("#cardcol .char-card");
     if (existCard) $("#cardcol").innerHTML = TIP_HTML;
+    closeDrawer();
     mask.classList.remove("hidden");
     renderQuizSlots();
     ZZSH.fx.sndTap();
