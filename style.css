@@ -511,17 +511,19 @@ button { font-family: inherit; cursor: pointer; }
   gap: 2px;
 }
 
-/* R2 剪影：墨团（模糊椭圆，不可辨认具体字形） */
+/* R2 剪影：墨团（模糊椭圆，不可辨认具体字形）
+ * 防泄底靠「全部格子同款形状」，不靠透明度——
+ * 初版 0.14~0.22 过淡导致视觉上不可见（用户实测反馈），加深到 0.42~0.62 */
 .codex-cell.locked .silhouette {
   display: block;
   width: 34px;
   height: 34px;
   border-radius: 46% 54% 52% 48% / 52% 46% 54% 48%;
   background: radial-gradient(ellipse at 42% 38%,
-              rgba(43,43,43,.14) 0%,
-              rgba(43,43,43,.22) 46%,
-              rgba(43,43,43,.12) 100%);
-  filter: blur(3.5px);
+              rgba(43,43,43,.42) 0%,
+              rgba(43,43,43,.62) 46%,
+              rgba(43,43,43,.40) 100%);
+  filter: blur(3px);
   user-select: none;
 }
 /* R2 剪影：笔画数角标 */
@@ -530,7 +532,7 @@ button { font-family: inherit; cursor: pointer; }
   font-family: var(--font-ui);
   font-size: 11px;
   line-height: 1;
-  color: rgba(43, 43, 43, .45);
+  color: rgba(43, 43, 43, .7);
   user-select: none;
 }
 .codex-cell.locked .stroke-count::before { content: "约 "; }
@@ -635,15 +637,15 @@ button { font-family: inherit; cursor: pointer; }
   width: 24px; height: 24px;
   border-radius: 46% 54% 52% 48% / 52% 46% 54% 48%;
   background: radial-gradient(ellipse at 42% 38%,
-              rgba(43,43,43,.14) 0%,
-              rgba(43,43,43,.22) 46%,
-              rgba(43,43,43,.12) 100%);
-  filter: blur(2.5px);
+              rgba(43,43,43,.42) 0%,
+              rgba(43,43,43,.62) 46%,
+              rgba(43,43,43,.40) 100%);
+  filter: blur(2px);
 }
 .fam-node.locked .stroke-count {
   font-family: var(--font-ui);
   font-size: 9px;
-  color: rgba(43, 43, 43, .45);
+  color: rgba(43, 43, 43, .7);
 }
 .fam-node.locked .stroke-count::before { content: ""; }
 .fam-node.locked .stroke-count::after { content: "画"; }
