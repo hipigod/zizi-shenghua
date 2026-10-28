@@ -1,0 +1,132 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>手机端适配检查</title>
+<style>
+  body { margin:0; font:13px/1.7 system-ui; background:#fff; color:#111; }
+  #frame { width:390px; height:844px; border:1px solid #ccc; }
+  #log { padding:10px 14px; white-space:pre-wrap; }
+  .ok { color:#2e7d32; } .no { color:#c62828; font-weight:700; } .warn { color:#e65100; }
+</style>
+<iframe id="f" src="../index.html" width="390" height="844" style="width:390px;height:844px;border:1px solid #ccc"></iframe>
+<div id="log">running…</div>
+<script>
+var L = [], el = document.getElementById("log");
+function log(ok, msg, cls) {
+  L.push('<span class="' + (cls || (ok ? "ok" : "no")) + '">' + (ok ? "✓" : "✗") + "</span> " + msg);
+  el.innerHTML = L.join("\n");
+}
+var f = document.getElementById("f");
+f.addEventListener("load", function () {
+  var w = f.contentWindow, doc = f.contentDocument, Z = w.ZZSH;
+  if (!Z) { log(false, "ZZSH 未挂载"); return; }
+  var W = w.innerWidth, H = w.innerHeight;
+  log(true, "视口 " + W + "×" + H);
+
+  // 1. 横向溢出
+  log(doc.documentElement.scrollWidth <= W + 1,
+    "无横向溢出（scrollWidth=" + doc.documentElement.scrollWidth + " / " + W + "）");
+
+  // 2. viewport meta
+  var vp = doc.querySelector('meta[name="viewport"]');
+  log(!!vp && /width=device-width/.test(vp.content), "viewport meta：" + (vp ? vp.content : "无"));
+  // 没有 viewport-fit=cover，iOS 上 env(safe-area-inset-*) 恒为 0，安全区适配形同虚设
+  log(!!vp && /viewport-fit=cover/.test(vp.content), "viewport-fit=cover（iOS 安全区生效的前提）");
+
+  // 3. 进入游戏屏（触屏分支生效的前提）
+  doc.getElementById("btn-start").click();
+  setTimeout(check, 400);
+
+  function check() {
+    var gameVisible = !doc.getElementById("screen-game").classList.contains("hidden");
+    log(gameVisible, "已进入游戏屏");
+
+    // 4. 触屏布局判定
+    var touch = w.matchMedia("(max-width: 768px), (pointer: coarse)").matches;
+    log(touch, "触屏布局判定 touchLayout=" + touch);
+
+    // 5. 竖向堆叠：库存条在画布下方
+    var inv = doc.querySelector(".inventory"), bw = doc.querySelector(".board-wrap");
+    if (inv && bw) {
+      var ri = inv.getBoundingClientRect(), rb = bw.getBoundingClientRect();
+      log(ri.top >= rb.bottom - 2, "库存条位于画布下方（库存 top=" + Math.round(ri.top) + " 画布 bottom=" + Math.round(rb.bottom) + "）");
+      log(ri.bottom <= H + 1, "库存条完整在视口内（bottom=" + Math.round(ri.bottom) + " / " + H + "）");
+      log(Math.round(ri.height) >= 100, "库存条高度 " + Math.round(ri.height) + "px");
+      log(w.getComputedStyle(inv).overflowX === "auto", "库存横向可滚动 overflow-x=" + w.getComputedStyle(inv).overflowX);
+    } else log(false, "找不到 .inventory / .board-wrap");
+
+    // 6. 桌面右侧栏应隐藏，卡片走抽屉
+    var col = doc.getElementById("cardcol");
+    log(w.getComputedStyle(col).display === "none", "窄屏隐藏桌面右侧栏（display=" + w.getComputedStyle(col).display + "）");
+
+    // 7. 字块尺寸（苹果建议可点区域 ≥ 44px）
+    var t = doc.querySelector(".inventory .tile");
+    if (t) {
+      var rt = t.getBoundingClientRect();
+      log(Math.round(rt.width) >= 44 && Math.round(rt.height) >= 44,
+        "字块可点区域 " + Math.round(rt.width) + "×" + Math.round(rt.height) + "px（≥44 为佳）");
+    }
+
+    // 8. 顶栏按钮不重叠、在视口内
+    var btns = [].slice.call(doc.querySelectorAll("#screen-game .topbar button, #screen-game .topbar-wrap button"));
+    var outside = btns.filter(function (b) {
+      var r = b.getBoundingClientRect();
+      return r.right > W + 1 || r.left < -1 || r.bottom > H + 1;
+    });
+    log(outside.length === 0, "顶栏按钮 " + btns.length + " 个全部在视口内（溢出 " + outside.length + " 个）");
+
+    // 9. 触屏点库存 = 放到画布（不是弹卡）
+    var before = doc.querySelectorAll("#board .tile").length;
+    var tile = doc.querySelector(".inventory .tile");
+    tile.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
+    setTimeout(function () {
+      var after = doc.querySelectorAll("#board .tile").length;
+      log(after === before + 1, "触屏点库存 → 字块落到画布（" + before + " → " + after + "）");
+
+      // 10. 卡片走抽屉路径
+      Z.ui.showCard("明");
+      var dr = doc.getElementById("card-drawer");
+      var inDrawer = !!doc.querySelector("#card-drawer-inner .char-card");
+      log(inDrawer && !dr.classList.contains("hidden"), "窄屏字源卡走底部抽屉");
+      var card = doc.querySelector("#card-drawer-inner .char-card");
+      if (card) {
+        var rc = card.getBoundingClientRect();
+        log(rc.width <= W + 1, "抽屉卡片宽度不溢出（" + Math.round(rc.width) + " / " + W + "）");
+      }
+
+      // 11. 底部安全区
+      var css = [].slice.call(doc.styleSheets).map(function (s) {
+        try { return [].slice.call(s.cssRules).map(function (r) { return r.cssText; }).join(""); } catch (e) { return ""; }
+      }).join("");
+      log(/safe-area-inset-bottom/.test(css), "底部安全区适配 env(safe-area-inset-bottom)",
+        /safe-area-inset-bottom/.test(css) ? "ok" : "warn");
+      log(/safe-area-inset-top/.test(css), "顶部安全区适配 env(safe-area-inset-top)");
+
+      // 12. 图鉴窄屏
+      Z.ui.showScreen("#screen-codex");
+      doc.getElementById("btn-codex").click();
+      var cell = doc.querySelector(".codex-cell");
+      log(!!cell, "图鉴在窄屏可渲染");
+      var grid = doc.querySelector(".codex-grid");
+      if (grid) log(grid.getBoundingClientRect().right <= W + 1, "图鉴网格不溢出");
+
+      // 13. 顶栏徽章总数字库扩容后是否同步
+      var bt = doc.getElementById("codex-badge-total");
+      var total = Object.keys(Z.DATA.chars).length;
+      log(!!bt && bt.textContent === String(total),
+        "顶栏徽章总数 " + (bt ? bt.textContent : "无") + "（字库 " + total + "）");
+
+      // 14. 回到游戏屏，方便截图
+      Z.ui.closeCard && Z.ui.closeCard();
+      var dm = doc.getElementById("drawer-mask"); if (dm) dm.classList.add("hidden");
+      var dd = doc.getElementById("card-drawer"); if (dd) dd.classList.add("hidden");
+      Z.ui.showScreen("#screen-game");
+      Z.ui.renderInventory();
+      log(true, "—— 检查结束 ——");
+      w.fetch("http://localhost:8765/report", {
+        method: "POST",
+        body: JSON.stringify({ stat: "mobile", md: el.textContent })
+      });
+    }, 600);
+  }
+});
+</script>

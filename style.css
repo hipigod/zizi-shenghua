@@ -706,12 +706,14 @@ button { font-family: inherit; cursor: pointer; }
   left: 0;
   right: 0;
   bottom: 0;
-  max-height: 72dvh;
+  /* dvh 在 iOS 15.4 以下不支持，统一改用 JS 维护的 --vh（与 .screen 一致） */
+  max-height: calc(var(--vh, 1vh) * 72);
   overflow-y: auto;
   background: var(--paper);
   border-radius: 18px 18px 0 0;
   z-index: 91;
-  padding: 8px 4px 20px;
+  /* 底部留出 iPhone home 指示条的高度，否则最后一行内容被压住 */
+  padding: 8px 4px calc(20px + env(safe-area-inset-bottom, 0px));
   animation: drawerup .28s ease-out;
 }
 @keyframes drawerup { from { transform: translateY(60%); } to { transform: translateY(0); } }
@@ -942,12 +944,13 @@ button { font-family: inherit; cursor: pointer; }
   .inventory {
     order: 2;
     flex: none;
-    height: 152px;
+    /* 加上 iPhone 底部安全区，否则最下一排字块被 home 指示条压住 */
+    height: calc(152px + env(safe-area-inset-bottom, 0px));
     border-right: none;
     border-top: 1px solid rgba(43, 43, 43, .12);
     display: flex;
     gap: 10px;
-    padding: 8px 10px;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
     overflow-x: auto;
     overflow-y: hidden;
   }
@@ -976,7 +979,12 @@ button { font-family: inherit; cursor: pointer; }
 @media (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
   .layout { display: grid; grid-template-columns: 200px 1fr; }
   .cardcol { display: none; }
-  .inventory { height: auto; border-top: none; border-right: 1px solid rgba(43, 43, 43, .12); }
+  .inventory {
+    height: auto;
+    border-top: none;
+    border-right: 1px solid rgba(43, 43, 43, .12);
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* 无障碍：减少动效 */

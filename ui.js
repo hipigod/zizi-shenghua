@@ -304,6 +304,9 @@
     $("#codex-total").textContent = s.total;
     $("#progress-fill").style.width = (s.got / s.total * 100) + "%";
     $("#codex-badge-num").textContent = s.got;
+    /* 徽章总数原先是没有 id 的静态文本，字库扩容后一直显示旧值 */
+    var bt = $("#codex-badge-total");
+    if (bt) bt.textContent = s.total;
     $("#achv-num").textContent = ZZSH.state.data.achievements.length;
     $("#achv-num2").textContent = ZZSH.state.data.achievements.length;
     document.querySelectorAll(".achv-total").forEach(function (el) {

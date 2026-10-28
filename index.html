@@ -2,7 +2,8 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!-- viewport-fit=cover 必须加：否则 iOS 上 env(safe-area-inset-*) 恒为 0，安全区适配失效 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no">
 <title>字字生花 · 汉字部件合成小游戏</title>
 <meta name="description" content="把汉字部件拖到一起，合成新字，点亮属于你的汉字图鉴。">
@@ -33,10 +34,10 @@
   <header class="topbar">
     <button class="topbar-back" id="btn-home" title="回到封面">字字生花</button>
     <div class="topbar-progress" id="progress-wrap" title="图鉴进度">
-      <span class="progress-label">图鉴 <b id="progress-num">0</b>/<b id="progress-total">62</b></span>
+      <span class="progress-label">图鉴 <b id="progress-num">0</b>/<b id="progress-total">95</b></span>
       <div class="progress-bar"><i id="progress-fill"></i></div>
     </div>
-    <button class="topbar-chip" id="btn-codex" title="汉字图鉴">📖<b id="codex-badge-num">0</b>/<span>62</span></button>
+    <button class="topbar-chip" id="btn-codex" title="汉字图鉴">📖<b id="codex-badge-num">0</b>/<span id="codex-badge-total">95</span></button>
     <button class="topbar-chip" id="btn-achv" title="成就">🏆<b id="achv-num">0</b>/<span class="achv-total">8</span></button>
     <button class="topbar-chip" id="btn-hint" title="提示">💡</button>
     <button class="topbar-chip" id="btn-settings" title="设置">⚙️</button>
@@ -75,7 +76,7 @@
   <header class="topbar">
     <button class="topbar-back" id="btn-codex-back">← 返回</button>
     <div class="topbar-title">汉字图鉴</div>
-    <div class="topbar-progress"><span class="progress-label"><b id="codex-num">0</b>/<b id="codex-total">62</b></span></div>
+    <div class="topbar-progress"><span class="progress-label"><b id="codex-num">0</b>/<b id="codex-total">95</b></span></div>
   </header>
   <div class="codex-tabs">
     <button class="codex-tab active" id="tab-wall">格子墙</button>
