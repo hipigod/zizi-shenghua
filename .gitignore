@@ -13,3 +13,7 @@ Thumbs.db
 
 # 依赖
 node_modules/
+
+# 测试产物与字体缓存
+tools/_hwdata/
+tools/fulltest_result.json

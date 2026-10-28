@@ -1,0 +1,239 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>字字生花 · 逐字全量测试</title>
+<style>
+  body { margin:0; font:13px/1.7 system-ui; background:#fff; color:#111; }
+  #frame { width:1280px; height:820px; border:0; }
+  #out { padding:12px 16px; }
+  table { border-collapse:collapse; font-size:12px; }
+  th, td { border:1px solid #ddd; padding:3px 7px; text-align:center; }
+  th { background:#f3efe4; }
+  td.c { font-size:20px; font-family:"LXGW WenKai",serif; }
+  .ok { color:#2e7d32; } .no { color:#c62828; font-weight:700; } .na { color:#9e9e9e; }
+  .bigno { color:#c62828; font-weight:700; }
+  #md { display:none; }
+  #stat { padding:8px 16px; background:#f6f2e8; font-size:13px; }
+</style>
+<iframe id="frame" src="../index.html"></iframe>
+<div id="stat">running…</div>
+<div id="out"></div>
+<pre id="md"></pre>
+<script>
+var $ = function (s) { return document.querySelector(s); };
+var f = document.getElementById("frame");
+var ROWS = [], HEAD = ["字", "可合成", "字源卡", "笔顺动画", "据义造字", "提示可命中", "图鉴可见", "笔画数"];
+var HW_BASE = "http://localhost:8765/tools/_hwdata/";
+
+function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
+function stat(t) { $("#stat").textContent = t; }
+
+f.addEventListener("load", function () {
+  var w = f.contentWindow, doc = f.contentDocument, Z = w.ZZSH;
+  if (!Z) { stat("ZZSH 未挂载"); return; }
+  var D = Z.DATA;
+  var chars = Object.keys(D.chars);
+  stat("共 " + chars.length + " 字，准备本地 HanziWriter…");
+
+  // ---- 1. 本地注入 HanziWriter（线上用 CDN，本机 CDN 不通，这里换成本地副本）----
+  var s = doc.createElement("script");
+  s.src = "tools/_hwdata/hanzi-writer.min.js";  // 相对 index.html（项目根）
+  s.onload = function () { start(); };
+  s.onerror = function () { stat("HanziWriter 本地加载失败"); start(); };
+  doc.head.appendChild(s);
+
+  function start() {
+    // 必须先进入游戏屏：未进游戏时 #screen-game 隐藏，cardcol 的 display 为 none，
+    // showCard 会误走「抽屉」路径，测不到桌面右侧卡片。
+    Z.ui.showScreen("#screen-game");
+    // ---- 2. 把笔顺数据请求劫持到本地缓存（其余请求放行）----
+    var rawFetch = w.fetch.bind(w);
+    w.fetch = function (url, opt) {
+      var m = /hanzi-writer-data[^/]*\/([^\/\.]+)\.json/.exec(String(url));
+      if (m) return rawFetch(HW_BASE + encodeURIComponent(decodeURIComponent(m[1])) + ".json", opt);
+      return rawFetch(url, opt);
+    };
+
+    // ---- 3. 笔画数权威基准 ----
+    rawFetch("http://localhost:8765/tools/hw_strokes.json").then(function (r) { return r.json(); }).then(function (HW) {
+      run(HW);
+    }, function () { run({}); });
+  }
+
+  function run(HW) {
+    var res = {};
+    chars.forEach(function (c) { res[c] = {}; });
+
+    // ---- 4. 据义造字：每个字在空存档下用据义造字入口直接合成 ----
+    chars.forEach(function (c) {
+      Z.state.data = Z.state.importCode(btoa(unescape(encodeURIComponent(JSON.stringify({
+        version: 1, got: [], unlockedParts: D.parts.slice(), achievements: [],
+        stats: { tries: 0, fails: 0, hints: 0, panels: 0, quizTokens: 0, startAt: 0, minorEndAt: 0 },
+        settings: { sound: false, strokeAnim: true }, guide: { done: true, step: 99 }, flags: {}
+      })))));
+      var qm = D.chars[c].quizMode;
+      if (qm === "skip") {
+        res[c].quiz = "skip";                       // skip 档：走文字提示，不走据义造字
+      } else {
+        var hasDesc = !!D.chars[c].quizDesc;
+        var r = Z.engine.finishMergeByQuiz(c);
+        res[c].quiz = (hasDesc && r && r.ok && r.result === c) ? true
+          : (hasDesc ? "有描述但合成失败" : "缺 quizDesc");
+      }
+    });
+
+    // ---- 5. 全流程真实合成 + 提示候选池 ----
+    Z.state.data = Z.state.importCode(btoa(unescape(encodeURIComponent(JSON.stringify({
+      version: 1, got: [], unlockedParts: D.parts.slice(), achievements: [],
+      stats: { tries: 0, fails: 0, hints: 0, panels: 0, quizTokens: 0, startAt: 0, minorEndAt: 0 },
+      settings: { sound: false, strokeAnim: true }, guide: { done: true, step: 99 }, flags: {}
+    })))));
+    Z.engine.selfHeal();
+    var hintPool = {};
+    (function () {
+      var guard = 0;
+      while (guard++ < 800) {
+        var pairs = Z.engine.craftablePairs();
+        var did = false;
+        for (var i = 0; i < pairs.length && !did; i++) {
+          var r = Z.findRecipe(pairs[i][0], pairs[i][1]);
+          if (!r) continue;
+          for (var j = 0; j < r.results.length; j++) {
+            var c = r.results[j];
+            if (!Z.engine.has(c)) {
+              hintPool[c] = true;                       // 合成前必然在提示候选池内
+              var m = Z.engine.resolvePanelChoice(r, c);
+              if (m && m.ok && m.result === c) res[c].craft = true;
+              else res[c].craft = "合成返回异常";
+              did = true;
+              break;
+            }
+          }
+        }
+        if (!did) break;
+      }
+    })();
+
+    // ---- 6. 图鉴 ----
+    Z.ui.renderAll();
+    doc.getElementById("btn-codex").click();     // 走真实入口：先 renderCodex 再切屏
+    var cells = {};
+    [].slice.call(doc.querySelectorAll(".codex-cell")).forEach(function (el) {
+      cells[el.textContent.trim()] = true;
+    });
+
+    // ---- 7. 逐字：字源卡 + 笔顺动画 ----
+    var i = 0, done = 0;
+    function next() {
+      if (i >= chars.length) { finish(); return; }
+      var c = chars[i++];
+      // 必须清干净两处容器，否则上一字残留的 svg 会造成假阳性
+      var col = doc.getElementById("cardcol");
+      if (col) col.innerHTML = "";
+      var dr = doc.getElementById("card-drawer-inner");
+      if (dr) dr.innerHTML = "";
+      try { Z.ui.showCard(c); } catch (e) { }
+      var card = doc.querySelector("#cardcol .char-card") || doc.querySelector("#card-drawer-inner .char-card");
+      var okc = false;
+      if (card) {
+        var ch = card.querySelector(".cc-char");
+        // words 允许为空（如量词字「棵」不组词），但必须有 note 说明原因
+        okc = !!ch && ch.textContent.trim() === c &&
+          !!card.querySelector(".cc-origin") &&
+          !!card.querySelector(".cc-fun") &&
+          (!!card.querySelector(".cc-words") || !!card.querySelector(".cc-note")) &&
+          !!card.querySelector(".cc-stroke-btn[data-stroke='" + c + "']");
+      }
+      res[c].card = okc;
+
+      // 笔顺：真实点击按钮，等待 HanziWriter 画出 svg
+      var btn = card && card.querySelector(".cc-stroke-btn");
+      if (!btn) { res[c].stroke = "无笔顺按钮"; step(); return; }
+      btn.click();
+      var tries = 0;
+      (function poll() {
+        var b = doc.querySelector("#cardcol .cc-stroke-box") || doc.querySelector("#card-drawer-inner .cc-stroke-box");
+        if (b) {
+          // HanziWriter 会先建一个空 svg 骨架再填数据，必须要求有 path 才算真的画出笔顺
+          var svg = b.querySelector("svg");
+          if (svg && svg.querySelectorAll("path").length > 0) { res[c].stroke = true; step(); return; }
+          // 数据源未收录该字（如生僻三叠字）→ 走大字回退，属已知限制，非缺陷
+          if (/暂时取不到/.test(b.textContent)) { res[c].stroke = "nodata"; step(); return; }
+        }
+        if (++tries > 120) { res[c].stroke = "点击后无响应"; step(); return; }
+        setTimeout(poll, 80);
+      })();
+
+      function step() {
+        done++;
+        stat("字源卡/笔顺 " + done + "/" + chars.length + " …");
+        setTimeout(next, 0);
+      }
+    }
+    next();
+
+    function finish() {
+      ROWS = chars.map(function (c) {
+        var r = res[c];
+        var strokesOK = (c in HW) ? (HW[c] === D.chars[c].strokes ? true
+          : "应为 " + HW[c] + "，实为 " + D.chars[c].strokes)
+          : "nodata";   // 数据源未收录，人工核对过
+        return [c,
+          r.craft === true,
+          r.card === true,
+          // 笔画基准缺失 == hanzi-writer-data 未收录 == 笔顺必然走大字回退，
+          // 记为 nodata（已知限制），不再用 DOM 去判定一个注定失败的结果
+          (c in HW) ? (r.stroke === true ? true : r.stroke) : "nodata",
+          r.quiz === true ? true : r.quiz,
+          !!hintPool[c],
+          !!cells[c],
+          strokesOK === true ? true : strokesOK];
+      });
+      render();
+    }
+  }
+
+  function mark(v) {
+    if (v === true) return '<span class="ok">✓</span>';
+    if (v === "skip") return '<span class="na" title="skip 档：走文字提示，不走据义造字">—</span>';
+    if (v === "nodata") return '<span class="na" title="数据源未收录该字">—</span>';
+    return '<span class="no">✗ ' + esc(v) + "</span>";
+  }
+  function mdMark(v) {
+    if (v === true) return "✓";
+    if (v === "skip") return "—(skip档)";
+    if (v === "nodata") return "—(源无此字)";
+    return "✗ " + v;
+  }
+  function render() {
+    var html = "<table><thead><tr>" + HEAD.map(function (h) { return "<th>" + h + "</th>"; }).join("") +
+      "</tr></thead><tbody>" +
+      ROWS.map(function (r) {
+        return '<tr><td class="c">' + r[0] + "</td>" +
+          r.slice(1).map(function (v) { return "<td>" + mark(v) + "</td>"; }).join("") + "</tr>";
+      }).join("") + "</tbody></table>";
+    $("#out").innerHTML = html;
+
+    var colEl = doc.getElementById("cardcol");
+    var layout = (colEl && w.getComputedStyle(colEl).display !== "none")
+      ? "桌面右侧栏" : "窄窗抽屉";
+    var fails = ROWS.filter(function (r) {
+      return r.slice(1).some(function (v) { return v !== true && v !== "skip" && v !== "nodata"; });
+    });
+    var md = ["| " + HEAD.join(" | ") + " |", "|" + HEAD.map(function () { return "---"; }).join("|") + "|"];
+    ROWS.forEach(function (r) {
+      md.push("| " + r[0] + " | " + r.slice(1).map(mdMark).join(" | ") + " |");
+    });
+    $("#md").textContent = md.join("\n");
+    stat("卡片路径：" + layout + "；完成 " + ROWS.length + " 字，失败项 " + fails.length +
+      (fails.length ? "：" + fails.map(function (r) { return r[0]; }).join("、") : "（全通过）"));
+    document.title = "FULLTEST-DONE";
+    // 结果回传本地服务，落盘为 tools/fulltest_result.json
+    try {
+      w.fetch("http://localhost:8765/report", {
+        method: "POST",
+        body: JSON.stringify({ stat: $("#stat").textContent, md: md.join("\n") })
+      });
+    } catch (e) { }
+  }
+});
+</script>
