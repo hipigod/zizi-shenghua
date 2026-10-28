@@ -342,13 +342,13 @@
           cell.textContent = c;
           cell.addEventListener("click", function () { showCard(c); });
         } else {
-          /* R2 剪影：字的轮廓虚影 + 笔画数。
-           * 设计修正：原版抽象墨团被否——身份不是秘密（配方才是），
-           * 轮廓虚影制造"看着眼熟想点亮"的钩子。
-           * 字直接写 textContent，颜色极淡即可；无 CSS 伪元素拼接（防"画画"叠加）。 */
+          /* R2 剪影：问号 + 笔画数。
+           * 演进记录：抽象墨团（被否：一坨黑）→ 字轮廓虚影（被否：字亮出来等于给答案）。
+           * 终版：? 不泄露字身份，N 画是真实筛选线索（同主线同笔画常有多个候选）。
+           * 结构类型不加：小池子里"品字+6画"能唯一定位「众」。 */
           cell.setAttribute("aria-label", "还没发现");
           cell.classList.add("sil-char");
-          cell.textContent = c;
+          cell.textContent = "?";
           var cnt = document.createElement("span");
           cnt.className = "stroke-count";
           cnt.setAttribute("aria-hidden", "true");
@@ -454,7 +454,7 @@
           } else {
             nd.setAttribute("aria-label", "还没发现");
             nd.classList.add("sil-char");
-            nd.textContent = c;
+            nd.textContent = "?";
             var cnt = document.createElement("span");
             cnt.className = "stroke-count";
             cnt.textContent = D.chars[c].strokes + " 画";

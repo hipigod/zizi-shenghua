@@ -511,10 +511,9 @@ button { font-family: inherit; cursor: pointer; }
   gap: 2px;
 }
 
-/* R2 剪影：字的轮廓虚影 + 笔画数。
- * 修正记录：原版抽象墨团被否（要的是"字的轮廓"不是"一坨黑"）；
- * 原版 CSS 伪元素拼接"约 / 画"与 JS 的"N画" 叠成"约N画画"，
- * 伪元素内容不进 textContent 导致测试断言漏检。现在文案全部由 JS 单一来源输出。 */
+/* R2 剪影：问号 + 笔画数。
+ * 演进：墨团（否）→ 字轮廓（否，泄答案）→ 终版问号。
+ * 颜色比正文浅一档：未解锁态，但清晰可读。 */
 .codex-cell.locked {
   border-style: dashed;
   border-color: rgba(43, 43, 43, .2);
@@ -522,9 +521,8 @@ button { font-family: inherit; cursor: pointer; }
   cursor: default;
   flex-direction: column;
   gap: 0;
-  font-size: 30px;
-  color: rgba(43, 43, 43, .16);
-  text-shadow: 0 0 3px rgba(43, 43, 43, .12);
+  font-size: 28px;
+  color: rgba(43, 43, 43, .38);
   position: relative;
 }
 .codex-cell.locked .stroke-count {
@@ -630,9 +628,8 @@ button { font-family: inherit; cursor: pointer; }
   flex-direction: column;
   gap: 1px;
   cursor: default;
-  font-size: 22px;
-  color: rgba(43, 43, 43, .16);
-  text-shadow: 0 0 2px rgba(43, 43, 43, .12);
+  font-size: 20px;
+  color: rgba(43, 43, 43, .38);
 }
 .fam-node.locked .stroke-count {
   font-family: var(--font-ui);
