@@ -338,9 +338,29 @@
         var got = st.got.includes(c);
         cell.className = "codex-cell" + (got ? "" : " locked") +
           (D.chars[c].rare ? " rare" : "") + (D.chars[c].triple ? " triple" : "");
-        cell.textContent = got ? c : "？";
         if (got) {
+          cell.textContent = c;
           cell.addEventListener("click", function () { showCard(c); });
+        } else {
+          /* R2 剪影：墨团 + 笔画数。泄底防护——
+           * 1. 原字绝不作为文本节点（textContent 只写笔画数）
+           * 2. 不放主线名/色（已拍板）
+           * 3. aria-label 只说「未发现」
+           * 4. data-char 不挂（防 DOM 检查作弊，也防 CSS 内容注入） */
+          cell.setAttribute("aria-label", "还没发现");
+          var ink = document.createElement("span");
+          ink.className = "silhouette";
+          ink.setAttribute("aria-hidden", "true");
+          var cnt = document.createElement("span");
+          cnt.className = "stroke-count";
+          cnt.setAttribute("aria-hidden", "true");
+          cnt.textContent = D.chars[c].strokes + "画";
+          cell.appendChild(ink);
+          cell.appendChild(cnt);
+          cell.addEventListener("click", function () {
+            ZZSH.fx.sndTap();
+            toast("还没发现——去画布上碰碰运气吧");
+          });
         }
         grid.appendChild(cell);
       });

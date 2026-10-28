@@ -221,6 +221,18 @@ function warn(msg) { warns.push(msg); }
   }
 })();
 
+/* ---------- 8. R2 图鉴剪影：strokes 字段 ---------- */
+(function () {
+  const chars = Object.keys(D.chars);
+  const bad = [];
+  chars.forEach(c => {
+    const s = D.chars[c].strokes;
+    if (!Number.isInteger(s) || s < 2 || s > 17) bad.push(`${c}=${s}`);
+  });
+  console.log(`8. R2 strokes 笔画数：${chars.length} 字，${bad.length ? "问题：" + bad.join("、") : "全部为 2~17 的整数，通过"}`);
+  if (bad.length) err(`strokes 字段缺失或越界：${bad.join("、")}`);
+})();
+
 /* ---------- 汇总 ---------- */
 console.log("\n========== 汇总 ==========");
 if (warns.length) warns.forEach(w => console.log("⚠ " + w));

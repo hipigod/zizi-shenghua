@@ -505,11 +505,36 @@ button { font-family: inherit; cursor: pointer; }
 .codex-cell.locked {
   border-style: dashed;
   border-color: rgba(43, 43, 43, .2);
-  color: rgba(43, 43, 43, .18);
   background: transparent;
-  font-size: 26px;
   cursor: default;
+  flex-direction: column;
+  gap: 2px;
 }
+
+/* R2 剪影：墨团（模糊椭圆，不可辨认具体字形） */
+.codex-cell.locked .silhouette {
+  display: block;
+  width: 34px;
+  height: 34px;
+  border-radius: 46% 54% 52% 48% / 52% 46% 54% 48%;
+  background: radial-gradient(ellipse at 42% 38%,
+              rgba(43,43,43,.14) 0%,
+              rgba(43,43,43,.22) 46%,
+              rgba(43,43,43,.12) 100%);
+  filter: blur(3.5px);
+  user-select: none;
+}
+/* R2 剪影：笔画数角标 */
+.codex-cell.locked .stroke-count {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 1;
+  color: rgba(43, 43, 43, .45);
+  user-select: none;
+}
+.codex-cell.locked .stroke-count::before { content: "约 "; }
+.codex-cell.locked .stroke-count::after { content: " 画"; }
 
 /* ============================================================
  * ④ 成就
