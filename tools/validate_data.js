@@ -263,6 +263,43 @@ function warn(msg) { warns.push(msg); }
   if (bad.length) err(`R3 quiz 校验失败：${bad.join("、")}`);
 })();
 
+/* ---------- 10. R4 字族树：family 校验 ---------- */
+(function () {
+  const chars = Object.keys(D.chars);
+  const partSet = new Set(Object.keys(D.partInfo));
+  const charSet = new Set(chars);
+  const bad = [];
+  const ROOTS = new Set(["木", "日", "人", "火", "水", "十"]);
+  // 注：非根部件（月口一心田小大不土目一）也是合法终点
+  chars.forEach(c => {
+    const p = D.chars[c].family;
+    if (!p) { bad.push(`${c} 无 family`); return; }
+    if (!partSet.has(p) && !charSet.has(p)) bad.push(`${c} family="${p}" 不在部件∪字表`);
+  });
+  // 上溯：无环、≤4 步到部件
+  chars.forEach(c => {
+    let cur = c, steps = 0;
+    const seen = new Set([c]);
+    while (cur && partSet.has(cur) === false) {
+      cur = D.chars[cur] ? D.chars[cur].family : null;
+      steps++;
+      if (!cur || steps > 4) { bad.push(`${c} 断链或超4层`); return; }
+      if (seen.has(cur)) { bad.push(`${c} 环`); return; }
+      seen.add(cur);
+    }
+  });
+  // 语义关联：parent 必须出现在该字配方或其祖先配方中（防标注笔误）
+  chars.forEach(c => {
+    const p = D.chars[c].family;
+    const rs = D.recipes.filter(r => r.results.includes(c));
+    if (!rs.length) return;
+    const ok = rs.some(r => r.a === p || r.b === p);
+    if (!ok) bad.push(`${c} family="${p}" 不在其配方中`);
+  });
+  console.log(`10. R4 family 字族：${chars.length} 字，${bad.length ? "问题：" + bad.join("、") : "全挂载无环，parent均在配方内，通过"}`);
+  if (bad.length) err(`R4 family 校验失败：${bad.join("、")}`);
+})();
+
 /* ---------- 汇总 ---------- */
 console.log("\n========== 汇总 ==========");
 if (warns.length) warns.forEach(w => console.log("⚠ " + w));

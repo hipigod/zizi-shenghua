@@ -537,6 +537,118 @@ button { font-family: inherit; cursor: pointer; }
 .codex-cell.locked .stroke-count::after { content: " 画"; }
 
 /* ============================================================
+ * R4 字族树
+ * ============================================================ */
+.codex-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px 0;
+  flex: none;
+}
+.codex-tab {
+  border: 1.5px solid rgba(43, 43, 43, .3);
+  background: transparent;
+  border-radius: 999px;
+  padding: 5px 16px;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+}
+.codex-tab.active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.fam-box {
+  background: #fffdf6;
+  border: 1px solid rgba(43, 43, 43, .15);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.fam-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.fam-root {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-kai);
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fam-head b { font-size: 15px; letter-spacing: 1px; }
+.fam-count { margin-left: auto; font-size: 13px; color: var(--ink-soft); }
+.fam-bloom { font-size: 20px; }
+.fam-tree { display: flex; flex-direction: column; gap: 10px; }
+.fam-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-left: 26px;
+  position: relative;
+}
+.fam-row::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: -10px;
+  bottom: 50%;
+  width: 12px;
+  border-left: 1.5px solid rgba(43, 43, 43, .2);
+  border-bottom: 1.5px solid rgba(43, 43, 43, .2);
+  border-bottom-left-radius: 10px;
+}
+.fam-row:first-child { padding-left: 0; }
+.fam-row:first-child::before { display: none; }
+.fam-node {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: var(--paper);
+  border: 1.5px solid rgba(43, 43, 43, .45);
+  font-family: var(--font-kai);
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+.fam-node.part { border-style: dashed; color: var(--ink-soft); }
+.fam-node.locked {
+  border-style: dashed;
+  border-color: rgba(43, 43, 43, .2);
+  flex-direction: column;
+  gap: 1px;
+  cursor: default;
+}
+.fam-node.locked .silhouette {
+  width: 24px; height: 24px;
+  border-radius: 46% 54% 52% 48% / 52% 46% 54% 48%;
+  background: radial-gradient(ellipse at 42% 38%,
+              rgba(43,43,43,.14) 0%,
+              rgba(43,43,43,.22) 46%,
+              rgba(43,43,43,.12) 100%);
+  filter: blur(2.5px);
+}
+.fam-node.locked .stroke-count {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  color: rgba(43, 43, 43, .45);
+}
+.fam-node.locked .stroke-count::before { content: ""; }
+.fam-node.locked .stroke-count::after { content: "画"; }
+
+/* ============================================================
  * ④ 成就
  * ============================================================ */
 .achv-item {

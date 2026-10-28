@@ -369,6 +369,113 @@
     });
   }
 
+  /* ================= R4 字族树 ================= */
+  var TREE_ROOTS = [
+    { root: "木", name: "木之族" },
+    { root: "日", name: "日之族" },
+    { root: "人", name: "人之族" },
+    { root: "火", name: "火之族" },
+    { root: "水", name: "水之族" },
+    { root: "十", name: "十之族" }
+  ];
+  function renderFamilyTree() {
+    var host = $("#codex-tree");
+    host.innerHTML = "";
+    var st = ZZSH.state.data;
+
+    function childrenOf(node) {
+      // node 的直接子字：family === node（部件也参与挂载，如 口 挂在 人 之外单独处理）
+      return Object.keys(D.chars).filter(function (c) {
+        return D.chars[c].family === node;
+      });
+    }
+    function subtreeChars(node) {
+      var all = [];
+      (function walk(n) {
+        childrenOf(n).forEach(function (c) {
+          all.push(c);
+          walk(c);
+        });
+      })(node);
+      return all;
+    }
+    function collectFamilyNodes(node) {
+      // 部件中间层：某字的 family 指向非根部件（如 品→吕→口）时，
+      // 该部件也作为树节点显示
+      var nodes = [];
+      (function walk(n) {
+        childrenOf(n).forEach(function (c) {
+          nodes.push(c);
+          walk(c);
+        });
+      })(node);
+      return nodes;
+    }
+
+    TREE_ROOTS.forEach(function (t) {
+      var members = collectFamilyNodes(t.root);
+      if (!members.length) return;
+      var gotCount = members.filter(function (c) {
+        return D.chars[c] && st.got.includes(c);
+      }).length;
+      var total = members.filter(function (c) { return D.chars[c]; }).length;
+      var box = document.createElement("div");
+      box.className = "fam-box";
+      var head = document.createElement("div");
+      head.className = "fam-head";
+      head.innerHTML = '<span class="fam-root">' + t.root + '</span>' +
+        '<b>' + t.name + '</b><span class="fam-count">' + gotCount + "/" + total + "</span>" +
+        (gotCount >= total ? '<span class="fam-bloom">🌸</span>' : "");
+      box.appendChild(head);
+
+      /* 纵向层级布局：根在顶，逐层往下；同层横排 */
+      var layers = [];
+      (function assign(n, depth) {
+        var kids = childrenOf(n);
+        kids.forEach(function (k) {
+          if (!layers[depth]) layers[depth] = [];
+          layers[depth].push({ node: k, parent: n });
+          assign(k, depth + 1);
+        });
+      })(t.root, 0);
+
+      var tree = document.createElement("div");
+      tree.className = "fam-tree";
+      layers.forEach(function (layer) {
+        var row = document.createElement("div");
+        row.className = "fam-row";
+        layer.forEach(function (item) {
+          var c = item.node;
+          var isPart = !D.chars[c];  // 中间层部件
+          var got = isPart ? true : st.got.includes(c);
+          var nd = document.createElement("div");
+          nd.className = "fam-node" + (got ? "" : " locked") + (isPart ? " part" : "");
+          if (got) {
+            nd.textContent = c;
+            nd.title = isPart ? "部件" : c;
+            if (!isPart) nd.addEventListener("click", function () { showCard(c); });
+          } else {
+            nd.setAttribute("aria-label", "还没发现");
+            var ink = document.createElement("span");
+            ink.className = "silhouette";
+            var cnt = document.createElement("span");
+            cnt.className = "stroke-count";
+            cnt.textContent = D.chars[c].strokes + "画";
+            nd.appendChild(ink); nd.appendChild(cnt);
+            nd.addEventListener("click", function () {
+              ZZSH.fx.sndTap();
+              toast("还没发现——去画布上碰碰运气吧");
+            });
+          }
+          row.appendChild(nd);
+        });
+        tree.appendChild(row);
+      });
+      box.appendChild(tree);
+      host.appendChild(box);
+    });
+  }
+
   /* ================= 成就 ================= */
   function renderAchievements() {
     var body = $("#achv-body");
@@ -889,6 +996,21 @@
       pauseGuide();
       renderCodex();
       showScreen("#screen-codex");
+    });
+    /* R4 图鉴 tab 切换 */
+    $("#tab-wall").addEventListener("click", function () {
+      $("#tab-wall").classList.add("active");
+      $("#tab-tree").classList.remove("active");
+      $("#codex-body").classList.remove("hidden");
+      $("#codex-tree").classList.add("hidden");
+    });
+    $("#tab-tree").addEventListener("click", function () {
+      ZZSH.fx.sndTap();
+      $("#tab-tree").classList.add("active");
+      $("#tab-wall").classList.remove("active");
+      renderFamilyTree();
+      $("#codex-tree").classList.remove("hidden");
+      $("#codex-body").classList.add("hidden");
     });
     function backToGame() { showScreen("#screen-game"); startGuide(); }
     $("#btn-codex-back").addEventListener("click", backToGame);
