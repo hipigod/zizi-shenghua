@@ -233,6 +233,36 @@ function warn(msg) { warns.push(msg); }
   if (bad.length) err(`strokes 字段缺失或越界：${bad.join("、")}`);
 })();
 
+/* ---------- 9. R3 据义造字：quizMode / quizDesc 校验 ---------- */
+(function () {
+  const chars = Object.keys(D.chars);
+  const bad = [];
+  let soft = 0;
+  chars.forEach(c => {
+    const q = D.chars[c];
+    const mode = q.quizMode;
+    if (!["full", "assist", "skip"].includes(mode)) { bad.push(`${c} quizMode=${mode} 非法`); return; }
+    if (mode === "skip") return;
+    if (typeof q.quizDesc !== "string" || !q.quizDesc) { bad.push(`${c} 缺 quizDesc`); return; }
+    if (q.quizDesc.length > 24) bad.push(`${c} quizDesc 超 24 字（${q.quizDesc.length}）`);
+    const rs = D.recipes.filter(r => r.results.includes(c));
+    if (!rs.length) { bad.push(`${c} 无配方`); return; }
+    const { a, b } = rs[0];
+    if (q.quizDesc.includes(c)) bad.push(`${c} quizDesc 含目标字`);
+    const hits = [...new Set(a + b)].filter(p => q.quizDesc.includes(p));
+    if (hits.length >= 2) bad.push(`${c} quizDesc 双部件泄底:${hits.join("/")}`);
+    else if (hits.length === 1) soft++;
+    if (mode === "assist") {
+      if (!q.assistPart || ![a, b].includes(q.assistPart)) bad.push(`${c} assistPart 非法`);
+    }
+  });
+  const m = { full: 0, assist: 0, skip: 0 };
+  chars.forEach(c => m[D.chars[c].quizMode]++);
+  console.log(`9. R3 quiz 数据：full ${m.full} / assist ${m.assist} / skip ${m.skip}，` +
+    `软引导（单部件命中）${soft} 处，${bad.length ? "问题：" + bad.join("、") : "通过"}`);
+  if (bad.length) err(`R3 quiz 校验失败：${bad.join("、")}`);
+})();
+
 /* ---------- 汇总 ---------- */
 console.log("\n========== 汇总 ==========");
 if (warns.length) warns.forEach(w => console.log("⚠ " + w));

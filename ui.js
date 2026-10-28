@@ -523,18 +523,129 @@
 
   var pendingMajor = false;
 
-  /* ================= 提示（三级） ================= */
+  /* ================= 提示：R3 据义造字面板 ================= */
   function onHint() {
     var h = ZZSH.engine.nextHint();
-    toast("💡 " + h.text, { long: true });
-    if (h.level === 3 && h.a && h.b) {
-      ZZSH.board.highlightChars([h.a, h.b]);
-      // 若画布上没有这两个字，自动放一个到中间
-      ensureOnBoard(h.a); ensureOnBoard(h.b);
-    } else if (h.level === 1 && h.char) {
-      ensureOnBoard(h.char);
+    if (h.level === 0 || h.quiz === "skip") {
+      /* 无目标 / skip 档：回归文字提示 */
+      toast("💡 " + h.text, { long: true });
+      if (h.level === 3 && h.a && h.b) {
+        ZZSH.board.highlightChars([h.a, h.b]);
+        ensureOnBoard(h.a); ensureOnBoard(h.b);
+      } else if (h.level === 1 && h.char) {
+        ensureOnBoard(h.char);
+      }
+      renderProgress();
+      return;
     }
-    renderProgress(); // hints 统计
+    openQuizPanel(h);
+  }
+
+  /* ---------- 据义造字面板 ---------- */
+  var quizState = { target: null, recipe: null, slots: [], assistGiven: false, boostUsed: false };
+  function openQuizPanel(h) {
+    quizState.target = h.char;
+    quizState.recipe = h.recipe;
+    quizState.slots = [];
+    quizState.assistGiven = false;
+    quizState.boostUsed = false;
+    var q = D.chars[h.char];
+    var mask = $("#quiz-mask");
+    $("#quiz-desc").textContent = q.quizDesc;
+    $("#quiz-slots").innerHTML =
+      '<div class="quiz-slot" data-slot="0"></div>' +
+      '<span class="quiz-plus">+</span>' +
+      '<div class="quiz-slot" data-slot="1"></div>';
+    /* 部件墙：配方两部件必在 + 已解锁部件 + 已收集字（丰富干扰） */
+    var mats = {};
+    [h.recipe.a, h.recipe.b].forEach(function (c) { mats[c] = true; });
+    ZZSH.state.data.unlockedParts.forEach(function (c) { mats[c] = true; });
+    ZZSH.state.data.got.slice(-10).forEach(function (c) { mats[c] = true; });
+    var wall = $("#quiz-wall");
+    wall.innerHTML = "";
+    Object.keys(mats).forEach(function (c) {
+      var t = document.createElement("div");
+      t.className = "tile quiz-tile" + (ZZSH.state.data.got.includes(c) ? "" : " quiz-part");
+      t.textContent = c;
+      t.dataset.pick = c;
+      wall.appendChild(t);
+    });
+    $("#quiz-boost").classList.remove("hidden");
+    $("#quiz-reveal").classList.add("hidden");
+    $("#quiz-tokens").textContent = ZZSH.state.data.stats.quizTokens || 0;
+    mask.classList.remove("hidden");
+    renderQuizSlots();
+    ZZSH.fx.sndTap();
+  }
+  function closeQuizPanel() { $("#quiz-mask").classList.add("hidden"); }
+
+  function renderQuizSlots() {
+    var slots = $("#quiz-slots").querySelectorAll(".quiz-slot");
+    slots.forEach(function (el, i) {
+      el.textContent = quizState.slots[i] || "";
+      el.classList.toggle("filled", !!quizState.slots[i]);
+    });
+  }
+
+  function quizPick(c) {
+    if (quizState.slots.length >= 2) return;
+    /* assist 档：亮出的表音部件自动占一槽（点选时直接放第一个空槽也行） */
+    quizState.slots.push(c);
+    renderQuizSlots();
+    if (quizState.slots.length === 2) quizJudge();
+  }
+  function quizClearSlot(i) {
+    if (quizState.slots[i]) { quizState.slots.splice(i, 1); renderQuizSlots(); }
+  }
+
+  function quizJudge() {
+    var r = quizState.recipe;
+    var pair = quizState.slots.slice().sort().join("");
+    var ans = [r.a, r.b].sort().join("");
+    if (pair === ans) {
+      /* 答对：收录目标字（走既有合并入口，动画/解锁/成就全复用） */
+      var st = ZZSH.state.data;
+      st.stats.quizTokens = (st.stats.quizTokens || 0) + 1;
+      closeQuizPanel();
+      var res = ZZSH.engine.finishMergeByQuiz(quizState.target);
+      if (res) afterMergeVisual(res, !!D.chars[quizState.target].triple,
+        window.innerWidth / 2, window.innerHeight / 3);
+    } else {
+      ZZSH.fx.sndFail();
+      var panel = $("#quiz-panel");
+      panel.classList.add("quiz-shake");
+      setTimeout(function () { panel.classList.remove("quiz-shake"); }, 400);
+      toast("再想想——意思对不上哦");
+      quizState.slots = [];
+      renderQuizSlots();
+    }
+  }
+
+  /* 再帮一把：亮出第一个正确部件（自动入槽） */
+  function quizBoost() {
+    if (quizState.boostUsed) return;
+    quizState.boostUsed = true;
+    var r = quizState.recipe;
+    var give = quizState.slots.length ? r.b : r.a;
+    if (quizState.slots.includes(give)) give = r.a;
+    quizState.slots = [give];
+    /* assist 档：亮出表音部件占另一槽，玩家只需拼表意部件 */
+    var q = D.chars[quizState.target];
+    if (q.quizMode === "assist" && q.assistPart) {
+      quizState.slots = [give, q.assistPart].slice(0, 2);
+      if (quizState.slots.length === 2) { renderQuizSlots(); quizJudge(); return; }
+    }
+    renderQuizSlots();
+    $("#quiz-boost").classList.add("hidden");
+    $("#quiz-reveal").classList.remove("hidden");
+  }
+  /* 直接告诉我：关面板 → 原第 3 级提示行为 */
+  function quizReveal() {
+    var r = quizState.recipe;
+    closeQuizPanel();
+    ensureOnBoard(r.a); ensureOnBoard(r.b);
+    ZZSH.board.highlightChars([r.a, r.b]);
+    toast("把「" + r.a + "」拖到「" + r.b + "」上！", { long: true });
   }
   function ensureOnBoard(c) {
     if (ZZSH.board.hasChar(c)) return;
@@ -746,6 +857,20 @@
       showScreen("#screen-cover");
     });
     $("#btn-hint").addEventListener("click", onHint);
+
+    /* R3 据义造字面板事件（委托） */
+    document.addEventListener("click", function (e) {
+      var pick = e.target.closest("[data-pick]");
+      if (pick) { ZZSH.fx.sndTap(); quizPick(pick.dataset.pick); return; }
+      var slot = e.target.closest(".quiz-slot");
+      if (slot) { quizClearSlot(parseInt(slot.dataset.slot, 10)); return; }
+    });
+    $("#quiz-close").addEventListener("click", closeQuizPanel);
+    $("#quiz-boost").addEventListener("click", quizBoost);
+    $("#quiz-reveal").addEventListener("click", quizReveal);
+    $("#quiz-mask").addEventListener("click", function (e) {
+      if (e.target === this) closeQuizPanel();
+    });
     $("#btn-achv").addEventListener("click", function () {
       ZZSH.fx.sndTap();
       pauseGuide();

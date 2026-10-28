@@ -190,9 +190,12 @@
     });
   }
 
-  /* ---------------- 提示系统（三级） ----------------
-   * 优先指向当前主线里尚未完成的下一个字。
-   * 返回 { level, text } 或 null（无可提示） */
+  /* ---------------- 提示系统（三级 → R3 据义造字改造） ----------------
+   * nextHint 仍负责：选目标（pickHintTarget）、计 hints、封 hintUsed。
+   * 返回新增 quiz 字段：
+   *   quiz:"panel" → ui 弹据义造字面板（full/assist 档）
+   *   quiz:"skip"  → ui 回归文字提示（skip 档或无 quizDesc）
+   * level 仍返回（level-0 兜底保留；面板内"直接告诉我"用 level-3 行为）。 */
   var hintCursor = {};
   function nextHint() {
     var st = ZZSH.state.data;
@@ -205,23 +208,42 @@
     ZZSH.state.save();
 
     var key = target.char;
+    var r = target.recipe;
+    var info = D.chars[target.char];
+
+    /* R3：优先走据义造字面板 */
+    if (info.quizMode === "full" || info.quizMode === "assist") {
+      return { level: 1, quiz: "panel", char: target.char, recipe: r,
+               text: info.quizDesc };
+    }
+
+    /* skip 档：回归原三级文字提示 */
     var lvl = (hintCursor[key] || 0) + 1;
     if (lvl > 3) lvl = 3;
     hintCursor[key] = lvl;
 
-    var r = target.recipe;
-    var info = D.chars[target.char];
     var lineName = D.lines[info.line] ? D.lines[info.line].name : "";
 
     if (lvl === 1) {
       // 方向提示：给一个原料（优先给部件/已收集字）
       var give = r.a;
-      return { level: 1, text: "试试用「" + give + "」", char: give };
+      return { level: 1, quiz: "skip", text: "试试用「" + give + "」", char: give };
     }
     if (lvl === 2) {
-      return { level: 2, text: "「" + r.a + "」和「" + r.b + "」之间有故事" + (lineName ? "（" + lineName + "）" : "") };
+      return { level: 2, quiz: "skip", text: "「" + r.a + "」和「" + r.b + "」之间有故事" + (lineName ? "（" + lineName + "）" : "") };
     }
-    return { level: 3, text: "把「" + r.a + "」拖到「" + r.b + "」上！", a: r.a, b: r.b };
+    return { level: 3, quiz: "skip", text: "把「" + r.a + "」拖到「" + r.b + "」上！", a: r.a, b: r.b };
+  }
+
+  /* R3：面板答对 → 直接收录目标字（等同合成成功，复用解锁/成就/结局检查） */
+  function finishMergeByQuiz(char) {
+    var st = ZZSH.state.data;
+    if (has(char)) return null;
+    st.got.push(char);
+    var unlocks = checkUnlocks();
+    var achievements = checkAchievements();
+    ZZSH.state.save();
+    return { ok: true, result: char, isNew: true, unlocks: unlocks, achievements: achievements };
   }
 
   /* 提示目标：按主线顺序找第一个「原料就绪但未收集」的字 */
@@ -309,6 +331,7 @@
     findRecipeFor: findRecipeFor,
     tryMerge: tryMerge,
     resolvePanelChoice: resolvePanelChoice,
+    finishMergeByQuiz: finishMergeByQuiz,
     failTextFor: failTextFor,
     nextHint: nextHint,
     craftablePairs: craftablePairs,
