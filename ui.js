@@ -301,6 +301,7 @@
     $("#codex-num").textContent = s.got;
     $("#codex-total").textContent = s.total;
     $("#progress-fill").style.width = (s.got / s.total * 100) + "%";
+    $("#codex-badge-num").textContent = s.got;
     $("#achv-num").textContent = ZZSH.state.data.achievements.length;
     $("#achv-num2").textContent = ZZSH.state.data.achievements.length;
     document.querySelectorAll(".achv-total").forEach(function (el) {
@@ -890,7 +891,14 @@
       showScreen("#screen-settings");
     });
 
-    /* 图鉴入口：点进度条区域打开图鉴 */
+    /* 图鉴入口：📖 独立按钮（原先只有进度条可点，入口隐蔽被用户两次问"在哪"） */
+    $("#btn-codex").addEventListener("click", function () {
+      ZZSH.fx.sndTap();
+      pauseGuide();
+      renderCodex();
+      showScreen("#screen-codex");
+    });
+    /* 进度条区域保留可点（老习惯不破坏） */
     $("#progress-wrap").addEventListener("click", function () {
       ZZSH.fx.sndTap();
       pauseGuide();
