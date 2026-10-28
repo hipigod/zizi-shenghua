@@ -248,7 +248,8 @@
 
   /* 提示目标：按主线顺序找第一个「原料就绪但未收集」的字 */
   function pickHintTarget() {
-    var lineOrder = ["caomu", "riyue", "renwu", "shuihuo", "pinwu"];
+    /* 提示目标按主线顺序找；顺序跟随 data.js lines 的 order（6 条主线） */
+    var lineOrder = ["caomu", "riyue", "renwu", "shuihuo", "houtu", "menhu"];
     for (var li = 0; li < lineOrder.length; li++) {
       var lineChars = allChars().filter(function (c) {
         return D.chars[c].line === lineOrder[li] && !has(c);

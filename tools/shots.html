@@ -1,0 +1,37 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>截图助手</title>
+<!-- 用法：tools/shots.html?w=390&h=844&view=game
+     view: cover 封面 / game 游戏屏 / card 字源卡 / codex 图鉴 / tree 字族树 -->
+<style>html,body{margin:0;padding:0;background:#000}iframe{display:block;border:0}</style>
+<iframe id="f" src="../index.html"></iframe>
+<script>
+var q = new URLSearchParams(location.search);
+var W = +q.get("w") || 390, H = +q.get("h") || 844;
+var view = q.get("view") || "cover";
+var f = document.getElementById("f");
+f.width = W; f.height = H;
+f.style.width = W + "px"; f.style.height = H + "px";
+
+f.addEventListener("load", function () {
+  var doc = f.contentDocument, w = f.contentWindow, Z = w.ZZSH;
+  if (!Z) return;
+  if (view === "cover") return;
+  try { doc.getElementById("btn-start").click(); } catch (e) { }
+  setTimeout(function () {
+    // 关掉引导遮罩，露出干净的画面
+    var g = doc.getElementById("guide-mask"); if (g) g.classList.add("hidden");
+    if (view === "card") {
+      var t = doc.querySelector(".inventory .tile");
+      if (t && w.matchMedia("(max-width: 768px)").matches) t.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
+      Z.ui.showCard("明");
+    }
+    if (view === "codex") { doc.getElementById("btn-codex").click(); }
+    if (view === "tree") {
+      doc.getElementById("btn-codex").click();
+      var tab = doc.getElementById("tab-tree"); if (tab) tab.click();
+    }
+    document.title = "SHOT-" + view + "-" + W + "x" + H;
+  }, 500);
+});
+</script>
