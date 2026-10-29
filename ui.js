@@ -386,13 +386,15 @@
     { root: "月", name: "月之族", color: "#6E7FA8" },
     { root: "人", name: "人之族", color: "#8D6E63" },
     { root: "口", name: "口之族", color: "#B5714E" },
-    { root: "心", name: "心之族", color: "#C1666B" },
+    /* 心之族 2026-10-29 取消：只有思、闷两个字，撑不起一个族。
+       思挂到「田」下、闷挂到「门」下（各取配方的另一半）。 */
     { root: "火", name: "火之族", color: "#D2603A" },
     { root: "水", name: "水之族", color: "#4A7FA5" },
     { root: "一", name: "一之族", color: "#6B8E8A" },
     { root: "十", name: "十之族", color: "#A08A4B" },
-    { root: "门", name: "门之族", color: "#6E7F8D" },
-    { roots: ["大", "不"], name: "大字之族", color: "#9A7B4F" }
+    { root: "门", name: "门之族", color: "#6E7F8D" }
+    /* 大字之族 2026-10-29 取消：「不」整个删掉，「大」改成合成字后挂到「人」下，
+       天/夫/尖/因/夯/奋/奎 自然跟着大一起挂在人之族里。 */
   ];
 
   var SVG_NS = "http://www.w3.org/2000/svg";

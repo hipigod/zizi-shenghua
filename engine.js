@@ -291,9 +291,9 @@
     var st = ZZSH.state.data;
     var validIds = D.achievements.map(function (a) { return a.id; });
     st.achievements = st.achievements.filter(function (id) { return validIds.indexOf(id) >= 0; });
-    /* 「田」「土」「目」由解锁件改为合成字：老存档里已解锁的，直接转为已收集，
+    /* 「田」「土」「目」「大」由解锁件改为合成字：老存档里已解锁的，直接转为已收集，
        避免出现部件组和主线组的重复字块，同时老玩家不丢原料。 */
-    ["田", "土", "目"].forEach(function (c) {
+    ["田", "土", "目", "大"].forEach(function (c) {
       var i = st.unlockedParts.indexOf(c);
       if (i >= 0) {
         st.unlockedParts.splice(i, 1);
