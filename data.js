@@ -146,7 +146,7 @@ ZZSH.DATA = {
       fun: "几根木头搭个架子，盖上草，就是瓜地里的看瓜「棚」。",
       words: ["棚子", "瓜棚", "工棚"], note: "" },
 
-    /* ===== 主线2 · 日月星辰（12） ===== */
+    /* ===== 主线2 · 日月星辰（14） ===== */
 
     "明": { pinyin: "míng", structure: "左右", line: "riyue", rare: false, strokes: 8, quizMode: "full", quizDesc: "白天最亮的和夜里接班的凑一起，亮堂堂", family: "日",
       origin: "光亮。日月同辉。《说文解字》：明，照也。",
@@ -198,6 +198,16 @@ ZZSH.DATA = {
       originSource: "",
       fun: "上面一横是天，下面一横是地，中间挂着太阳：从古到今，一直这样，这就是「亘古」。",
       words: ["亘古", "绵亘"], note: "「亘」的古写与「宣」同源，这里取天地绵延的字形来说。" },
+    "二": { pinyin: "èr", structure: "独体", line: "riyue", rare: false, strokes: 2, quizMode: "full", quizDesc: "上短下长的两根横，比单根横画再多添一道", family: "一",
+      origin: "指事字。两根横线并列，表示数目。《说文解字》：二，地之数也。",
+      originSource: "《说文解字》",
+      fun: "上面那横是天，下面那横是地——「二」画的就是天地两层。",
+      words: ["第二", "二月", "独一无二"], note: "指事字：不靠形旁，直接用两横的位置指出数目。" },
+    "三": { pinyin: "sān", structure: "独体", line: "riyue", rare: false, strokes: 3, quizMode: "full", quizDesc: "两根横的上面再添一道，整整齐齐摞起来", family: "二",
+      origin: "指事字。三横并列。《说文解字》：三，天地人之道也，从三数。",
+      originSource: "《说文解字》",
+      fun: "上一横是天，下一横是地，中间那横是人——天地人凑齐了，才算完整。",
+      words: ["三月", "三思", "三角形"], note: "指事字：三横分别指天、地、人。" },
     "旱": { pinyin: "hàn", structure: "上下", line: "riyue", rare: false, strokes: 7, quizMode: "full", quizDesc: "好久不下雨，田地都裂开了", family: "干",
       origin: "干旱。《说文解字》：旱，不雨也。从日干声。",
       originSource: "《说文解字》",
@@ -599,6 +609,9 @@ recipes: [
     { a: "林", b: "火", results: ["焚"] },
 
     /* 主线二 日月星辰 */
+    /* 指事字序列：一 → 二 → 三，全靠「一」累加而成 */
+    { a: "一", b: "一", results: ["二"] },
+    { a: "一", b: "二", results: ["三"] },
     { a: "日", b: "月", results: ["明"] },
     { a: "日", b: "日", results: ["昌"] },
     { a: "昌", b: "日", results: ["晶"] },

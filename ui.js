@@ -385,6 +385,7 @@
     { root: "心", name: "心之族" },
     { root: "火", name: "火之族" },
     { root: "水", name: "水之族" },
+    { root: "一", name: "一之族" },
     { root: "十", name: "十之族" },
     { root: "门", name: "门之族" },
     { roots: ["大", "不"], name: "大字之族" }

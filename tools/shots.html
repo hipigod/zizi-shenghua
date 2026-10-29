@@ -24,7 +24,7 @@ f.addEventListener("load", function () {
     if (view === "card") {
       var t = doc.querySelector(".inventory .tile");
       if (t && w.matchMedia("(max-width: 768px)").matches) t.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
-      Z.ui.showCard("明");
+      Z.ui.showCard(q.get("char") || "明");
     }
     if (view === "rz") {
       /* 演示：库存拉到 320、卡片拉到 380，并让右侧调节条停在「拖动中」高亮态 */
