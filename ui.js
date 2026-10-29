@@ -413,7 +413,7 @@
     host.innerHTML = "";
     var st = ZZSH.state.data;
 
-    /* 子节点查表，避免递归里反复遍历 101 个字 */
+    /* 子节点查表，避免递归里反复遍历整个字表 */
     var kidsMap = {};
     Object.keys(D.chars).forEach(function (c) {
       var p = D.chars[c].family;

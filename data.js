@@ -57,6 +57,9 @@ ZZSH.DATA = {
     "门": { pinyin: "mén", note: "两扇门之形；简化为「门」" },
     "土": { pinyin: "tǔ",  note: "地面上的土堆" },
     "十": { pinyin: "shí", note: "一横一竖，表示完整、多" },
+    /* 「目」2026-10-29 已改为合成字（二+口）。这条说明留着只为兼容老存档：
+       state.js 加载时会用 partInfo 过滤 unlockedParts，删掉它老玩家的「目」会被静默丢弃；
+       engine.selfHeal 负责把老存档里的「目」从部件转成已收集。 */
     "目": { pinyin: "mù",  note: "眼睛竖起来的样子" }
   },
 
@@ -219,7 +222,7 @@ ZZSH.DATA = {
       originSource: "《说文解字》",
       fun: "眼睛盯着一棵树，看它长直了没——宰相也要有双好眼睛。",
       words: ["相互", "互相", "相貌"], note: "" },
-    /* ===== 主线3 · 人来人往（22） ===== */
+    /* ===== 主线3 · 人来人往（23） ===== */
 
     "从": { pinyin: "cóng", structure: "左右", line: "renwu", rare: false, strokes: 4, quizMode: "full", quizDesc: "一个在前走，另一个紧紧跟在后头", family: "人",
       origin: "二人相随而行。",
@@ -273,6 +276,11 @@ ZZSH.DATA = {
       originSource: "",
       fun: "身体里藏着胆汁的那个小袋子叫「胆」，说一个人有胆，是说他敢。",
       words: ["胆量", "胆囊", "大胆"], note: "和「肝」成对，都是肉月旁。" },
+    "目": { pinyin: "mù", structure: "独体", line: "renwu", rare: false, strokes: 5, quizMode: "full", quizDesc: "两道横嵌在方框里，说的是用来看东西的器官", family: "口",
+      origin: "象形字，人眼。《说文解字》：目，人眼，象形。甲骨文像横着的眼睛；楷书竖写，外框是眼眶，里面两横是眼珠。",
+      originSource: "《说文解字》",
+      fun: "把「口」当眼眶，塞进「二」当两道眼珠——竖起来的「日」，就是「目」。",
+      words: ["目光", "目录", "耳目"], note: "看起来是「口」加「二」，其实是眼睛的象形字：外框是眼眶，两横是眼珠。" },
     "囚": { pinyin: "qiú", structure: "全包围", line: "renwu", rare: false, strokes: 5, quizMode: "full", quizDesc: "被关进四面围死的栏里，出不来", family: "人",
       origin: "人被关在围栏里。",
       originSource: "《说文解字》",
@@ -638,6 +646,7 @@ recipes: [
     { a: "力", b: "口", results: ["加", "另", "叻"],
       hints: { "加": "力在左，口在右", "另": "口在上，力在下", "叻": "口在左，力在右" } },
     { a: "口", b: "土", results: ["吐"] },
+    { a: "二", b: "口", results: ["目"] },
 
     /* 主线四 水火之间 */
     { a: "火", b: "火", results: ["炎"] },
@@ -716,8 +725,8 @@ recipes: [
       toast: "已收集 20 个字！四个新部件来了" },
     { when: { type: "count", n: 30 },         give: ["门"],
       toast: "已收集 30 个字！「门」来了" },
-    { when: { type: "count", n: 40 },         give: ["目"],
-      toast: "已收集 40 个字！收官部件「目」来了" },
+    { when: { type: "count", n: 40 },         give: [],
+      toast: "已收集 40 个字！回图鉴翻翻字族树吧" },
     { when: { type: "lineCount", line: "shuihuo", n: 5 }, give: [],
       toast: "水火之间已通五关——六个三叠字在召唤你……" }
   ],
