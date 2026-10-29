@@ -125,8 +125,11 @@ f.addEventListener("load", function () {
     var tab = doc.getElementById("tab-tree");
     if (tab) tab.click();
     var fam = {};
-    [].slice.call(doc.querySelectorAll(".fam-node")).forEach(function (el) {
-      fam[el.textContent.trim()] = true;
+    // 字族树 2026-10-29 改成 SVG：节点是 <g class="fam-node-g">，
+    // 直接读 textContent 会把 <title> 和笔画数一起读进来，必须取 .glyph
+    [].slice.call(doc.querySelectorAll(".fam-node-g")).forEach(function (el) {
+      var t = el.querySelector(".glyph");
+      if (t) fam[t.textContent.trim()] = true;
     });
 
     // ---- 7. 逐字：字源卡 + 笔顺动画 ----

@@ -520,6 +520,8 @@ body.rz-dragging { user-select: none; }
 .codex-body, .achv-body, .settings-body, .about-body {
   flex: 1;
   overflow-y: auto;
+  /* 树可能比卡片宽，横向滚动交给 .fam-scroll，别让整页出现横条 */
+  overflow-x: hidden;
   padding: 16px;
   -webkit-overflow-scrolling: touch;
 }
@@ -614,84 +616,179 @@ body.rz-dragging { user-select: none; }
   color: var(--paper);
   border-color: var(--ink);
 }
+/* ---------- 字族树（SVG 树形） ---------- */
 .fam-box {
-  background: #fffdf6;
-  border: 1px solid rgba(43, 43, 43, .15);
-  border-radius: 14px;
-  padding: 14px;
-  margin-bottom: 14px;
-  box-shadow: var(--shadow);
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto 16px;
+  padding: 12px 10px 4px;
+  border: 1px solid rgba(43, 43, 43, .1);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, .9), rgba(255, 255, 255, 0) 62%),
+    linear-gradient(180deg, #FFFDF7 0%, #F9F3E5 100%);
+  box-shadow: 0 1px 2px rgba(43, 43, 43, .04), 0 8px 22px rgba(43, 43, 43, .055);
+  overflow: hidden;
+}
+/* 顶部一道族色光带，12 个族靠颜色分开 */
+.fam-box::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 0;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(90deg, transparent, var(--fam-color), transparent);
+  opacity: .7;
+}
+.fam-box.done::before { opacity: .9; }
+/* 树冠投下的一点色晕，让卡片不是一张白纸 */
+.fam-box::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0; height: 190px;
+  background: radial-gradient(ellipse 60% 100% at 50% 0%, var(--fam-color), transparent 72%);
+  opacity: .07;
+  pointer-events: none;
 }
 .fam-head {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  padding: 4px 10px 2px;
 }
-.fam-root {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: var(--ink);
-  color: var(--paper);
+.fam-name {
   font-family: var(--font-kai);
-  font-size: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 15px;
+  letter-spacing: 3px;
+  color: var(--ink);
 }
-.fam-head b { font-size: 15px; letter-spacing: 1px; }
-.fam-count { margin-left: auto; font-size: 13px; color: var(--ink-soft); }
-.fam-bloom { font-size: 20px; }
-.fam-tree { display: flex; flex-direction: column; gap: 10px; }
-.fam-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-left: 26px;
-  position: relative;
+.fam-bar {
+  margin-left: auto;
+  width: 70px;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(43, 43, 43, .08);
+  overflow: hidden;
 }
-.fam-row::before {
-  content: "";
-  position: absolute;
-  left: 10px;
-  top: -10px;
-  bottom: 50%;
-  width: 12px;
-  border-left: 1.5px solid rgba(43, 43, 43, .2);
-  border-bottom: 1.5px solid rgba(43, 43, 43, .2);
-  border-bottom-left-radius: 10px;
+.fam-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--fam-color);
+  transition: width .6s cubic-bezier(.4, 1.1, .4, 1);
 }
-.fam-row:first-child { padding-left: 0; }
-.fam-row:first-child::before { display: none; }
-.fam-node {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
-  background: var(--paper);
-  border: 1.5px solid rgba(43, 43, 43, .45);
+.fam-count {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  min-width: 34px;
+  text-align: right;
+}
+.fam-bloom { font-size: 15px; line-height: 1; }
+
+/* 树可能比卡片宽（木族 17 个直接子字），横向滚动而不是整体缩小 */
+.fam-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 4px 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(43, 43, 43, .18) transparent;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.fam-scroll::-webkit-scrollbar { height: 4px; }
+.fam-scroll::-webkit-scrollbar-thumb {
+  background: rgba(43, 43, 43, .16);
+  border-radius: 99px;
+}
+.fam-scroll::-webkit-scrollbar-track { background: transparent; }
+.fam-svg {
+  display: block;
+  margin: 0 auto;
+}
+/* 两端渐隐：暗示这一族还能左右滑动，同时不切断节点的边缘 */
+.fam-scroll {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+}
+.fam-link {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 节点：圆形果实 */
+.fam-node-g { outline: none; }
+.fam-node-g .disc {
+  fill: #FFFDF6;
+  stroke: var(--fam-color);
+  stroke-width: 2;
+  transition: stroke-width .18s ease;
+}
+.fam-node-g:hover .disc,
+.fam-node-g:focus-visible .disc { stroke-width: 3; }
+.fam-node-g:hover { filter: drop-shadow(0 3px 7px rgba(43, 43, 43, .2)); }
+.fam-node-g .glyph {
   font-family: var(--font-kai);
-  font-size: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  user-select: none;
+  font-size: 30px;
+  fill: var(--ink);
+  pointer-events: none;
 }
-.fam-node.part { border-style: dashed; color: var(--ink-soft); }
-.fam-node.locked {
-  border-style: dashed;
-  border-color: rgba(43, 43, 43, .2);
-  flex-direction: column;
-  gap: 1px;
-  cursor: default;
-  font-size: 20px;
-  color: rgba(43, 43, 43, .38);
+.fam-node-g.is-root .disc {
+  fill: var(--fam-color);
+  stroke: none;
+  filter: drop-shadow(0 3px 8px rgba(43, 43, 43, .18));
 }
-.fam-node.locked .stroke-count {
+.fam-node-g.is-root .glyph {
+  font-size: 36px;
+  fill: #FFFDF7;
+}
+.fam-node-g .ring {
+  fill: none;
+  stroke: rgba(255, 253, 247, .5);
+  stroke-width: 1.1;
+  stroke-dasharray: 2 4;
+  pointer-events: none;
+}
+.fam-node-g.part .disc {
+  fill: rgba(255, 253, 247, .72);
+  stroke-dasharray: 4 3;
+  stroke-opacity: .55;
+}
+.fam-node-g.part .glyph { fill: var(--ink-soft); }
+
+/* 未发现：虚线空圈 + 问号 + 笔画数 */
+.fam-node-g.locked { cursor: pointer; }
+.fam-node-g.locked .disc {
+  fill: rgba(255, 255, 255, .5);
+  stroke: rgba(43, 43, 43, .2);
+  stroke-width: 1.4;
+  stroke-dasharray: 5 4;
+}
+.fam-node-g.locked:hover .disc { stroke-width: 2.2; }
+.fam-node-g.locked .glyph {
+  font-family: var(--font-ui);
+  font-size: 21px;
+  font-weight: 300;
+  fill: rgba(43, 43, 43, .3);
+}
+.fam-node-g .stroke-count {
   font-family: var(--font-ui);
   font-size: 9px;
-  color: rgba(43, 43, 43, .55);
+  letter-spacing: .2px;
+  fill: rgba(43, 43, 43, .42);
+  pointer-events: none;
+}
+.fam-knot {
+  fill: var(--fam-color);
+  opacity: .55;
+}
+.fam-node-g .bud {
+  fill: var(--fam-color);
+  opacity: .75;
+  pointer-events: none;
 }
 
 /* ============================================================
@@ -1054,4 +1151,11 @@ body.rz-dragging { user-select: none; }
     animation-iteration-count: 1 !important;
     transition-duration: .01s !important;
   }
+}
+
+/* 顶栏在窄屏收紧：字库涨到三位数（0/101）后，「设置」按钮被挤出视口 7px */
+@media (max-width: 430px) {
+  .topbar { gap: 6px; padding: 0 10px; }
+  .topbar-chip { padding: 5px 8px; }
+  .topbar-chip b { margin-left: 1px; }
 }
