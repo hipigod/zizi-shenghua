@@ -123,7 +123,9 @@
       (info.words && info.words.length ? '<div class="cc-sec"><div class="cc-sec-label">✏️ 组词</div>' +
         '<div class="cc-words">' + info.words.join(" · ") + "</div></div>" : "") +
       (info.note ? '<div class="cc-note">💡 ' + info.note + "</div>" : "") +
-      '<button class="cc-stroke-btn" data-stroke="' + c + '">▶ 看笔顺</button>' +
+      (hasStrokeData(c)
+        ? '<button class="cc-stroke-btn" data-stroke="' + c + '">▶ 看笔顺</button>'
+        : '<div class="cc-stroke-none">这个字暂无笔顺数据（生僻字，数据源未收录）</div>') +
       "</div>";
     return html;
   }
@@ -198,14 +200,33 @@
    *  - 脚本加载中再次点击不再卡在「加载笔顺…」。
    *  - 回退文字改为「大字 + 小字说明」，原 96px 长句会撑破卡片。 */
   var HW_SCRIPTS = [
+    "hw/hanzi-writer.min.js",
     "https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js",
     "https://registry.npmmirror.com/hanzi-writer/3.5.0/files/dist/hanzi-writer.min.js"
   ];
+  /* 笔顺数据本地优先：hw/<字>.json 随游戏一起发布，断网也能播。
+   * 以前只挂 CDN，国内网络不稳时笔顺永远出不来，看着像坏了。 */
   var HW_DATA = [
+    function (ch) { return "hw/" + encodeURIComponent(ch) + ".json"; },
     function (ch) { return "https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/" + encodeURIComponent(ch) + ".json"; },
     function (ch) { return "https://registry.npmmirror.com/hanzi-writer-data/2.0.1/files/" + encodeURIComponent(ch) + ".json"; }
   ];
   var hwLoading = false, hwFailed = false, hwPending = null;
+
+  /* 哪些字有笔顺数据：读 hw/index.json 一次，卡片据此决定显示「看笔顺」还是
+   * 「暂无笔顺数据」。清单没取到（老浏览器/file://）时按「有」处理，
+   * 点开再走运行时探测，不会因为清单失败就一律不给按钮。 */
+  var hwSet = null;
+  function loadHWIndex() {
+    if (!window.fetch) return;
+    fetch("hw/index.json").then(function (r) {
+      return r.ok ? r.json() : null;
+    }).then(function (list) {
+      if (Object.prototype.toString.call(list) === "[object Array]") hwSet = list.join("");
+    }).catch(function () { /* 拿不到清单就按有数据处理 */ });
+  }
+  function hasStrokeData(c) { return hwSet === null || hwSet.indexOf(c) >= 0; }
+
   function loadScript(src, ok, fail) {
     var s = document.createElement("script");
     s.src = src;
@@ -216,19 +237,27 @@
     if (!list.length) { fail(); return; }
     loadScript(list[0], ok, function () { loadScriptChain(list.slice(1), ok, fail); });
   }
+  /* 逐级回退取数据：本地 → jsDelivr → npmmirror。
+   * 三处都 404 才算「数据源没有这个字」；中途有网络错误就记一笔，
+   * 最后据此区分「真没数据」和「网络取不到」，别把两件事都说成网络问题。 */
+  var hwNetErr = false;
   function fetchStrokeData(ch, i, onOk, onFail) {
-    if (i >= HW_DATA.length || !window.fetch) { onFail(); return; }
+    if (i >= HW_DATA.length || !window.fetch) { onFail(!hwNetErr); return; }
     fetch(HW_DATA[i](ch)).then(function (r) {
+      if (r.status === 404) throw { notFound: true };
       if (!r.ok) throw new Error(r.status);
       return r.json();
-    }).then(onOk, function () { fetchStrokeData(ch, i + 1, onOk, onFail); });
+    }).then(onOk, function (e) {
+      if (!e || !e.notFound) hwNetErr = true;
+      fetchStrokeData(ch, i + 1, onOk, onFail);
+    });
   }
   function showStroke(c) {
     if (!ZZSH.state.data.settings.strokeAnim) { toast("笔顺动画已在设置中关闭"); return; }
     var box = $("#card-drawer").classList.contains("hidden")
       ? cardBoxInCol() : drawerStrokeBox();
     if (!box) return;
-    if (hwFailed) { strokeFallback(box, c); return; }
+    if (hwFailed) { strokeFallback(box, c, false); return; }
     box.innerHTML = '<div style="text-align:center;color:#6b6455;font-size:12px;padding:20px">加载笔顺…</div>';
     if (!window.HanziWriter) {
       hwPending = { box: box, c: c };          // 只画最后一次点击的字
@@ -243,7 +272,7 @@
         function () {
           hwLoading = false; hwFailed = true;
           var p = hwPending; hwPending = null;
-          if (p && p.box.isConnected) strokeFallback(p.box, p.c);
+          if (p && p.box.isConnected) strokeFallback(p.box, p.c, false);
         });
       return;
     }
@@ -258,21 +287,28 @@
         radicalColor: "#C8102E",
         showOutline: true,
         charDataLoader: function (char, onComplete, onError) {
-          fetchStrokeData(char, 0, onComplete, function () {
+          fetchStrokeData(char, 0, onComplete, function (noData) {
             if (typeof onError === "function") onError();
-            strokeFallback(box, c);
+            strokeFallback(box, c, noData);
           });
         },
-        onLoadCharDataError: function () { strokeFallback(box, c); }
+        /* HanziWriter 自己也会在 loader 报错后回调这里，重复调用只是重写同一块，
+           文案取同一个判定值，不会出现「刚说没数据又改口说网络问题」 */
+        onLoadCharDataError: function () { strokeFallback(box, c, !hwNetErr); }
       });
       w.loopCharacterAnimation();
-    } catch (e) { strokeFallback(box, c); }
+    } catch (e) { strokeFallback(box, c, false); }
   }
-  function strokeFallback(box, c) {
+  /* noData=true：本地和两个 CDN 都明确 404，就是数据源没收这个字；
+   * noData=false：是网络/脚本没加载上，可以重试。两句话不能混。 */
+  function strokeFallback(box, c, noData) {
     if (!box.isConnected) return;
+    var msg = noData
+      ? "「" + c + "」暂无笔顺数据——生僻字，笔顺数据源没有收录"
+      : "暂时取不到笔顺数据（网络问题，回到游戏再点一次可重试）";
     box.innerHTML = '<div style="text-align:center;padding:8px 0">' +
       '<div style="font-family:var(--font-kai);font-size:96px;line-height:1.2;color:#2B2B2B">' + c + "</div>" +
-      '<div style="font-size:12px;color:#6b6455">暂时取不到笔顺数据（可能是网络问题）</div></div>';
+      '<div style="font-size:12px;color:#6b6455;line-height:1.6;padding:0 6px">' + msg + "</div></div>";
   }
   function cardBoxInCol() {
     var col = $("#cardcol");
@@ -368,6 +404,13 @@
       sec.appendChild(grid);
       body.appendChild(sec);
     });
+
+    /* 修复（2026-10-30）：字族树原先只在点「字族树」tab 那一下渲染。
+     * tab 状态是一直留着的，所以从游戏里合成新字后再点 📖 打开图鉴，
+     * 面板还停在「字族树」上，看到的是打开图鉴前那一次渲染的旧树——
+     * 新合成的字仍是问号、计数也不涨，像是没同步。
+     * 现在按当前激活的 tab 一并补渲染。 */
+    if ($("#tab-tree").classList.contains("active")) renderFamilyTree();
   }
 
   /* ================= R4 字族树 ================= */
@@ -390,15 +433,19 @@
        思挂到「田」下、闷挂到「门」下（各取配方的另一半）。 */
     { root: "火", name: "火之族", color: "#D2603A" },
     { root: "水", name: "水之族", color: "#4A7FA5" },
-    { root: "一", name: "一之族", color: "#6B8E8A" },
     { root: "十", name: "十之族", color: "#A08A4B" },
-    { root: "门", name: "门之族", color: "#6E7F8D" },
-    /* 「正」是部件不是字，怔 独占一支。只有 1 个字，但心之族取消后
-       心旁的怔无处可挂（思→田、闷→门、想→相、悍→旱都是这么处理的），
-       而「正」本身是常用部件，单独一个框尚可接受。 */
-    { root: "正", name: "正之族", color: "#A85751" }
+    { root: "门", name: "门之族", color: "#6E7F8D" }
     /* 大字之族 2026-10-29 取消：「不」整个删掉，「大」改成合成字后挂到「人」下，
        天/夫/尖/因/夯/奋/奎 自然跟着大一起挂在人之族里。 */
+  ];
+
+  /* 单薄的族不占一整行：一之族只有 一→二→三、正之族只有 正→怔，
+   * 撑满一张卡片右边全是空白。改成并排的小徽章，挂在树列表末尾。
+   * 放在 TREE_ROOTS 之后、renderFamilyTree 之前：validate_data.js 的
+   * 第 11 项按这段区间扫 root，两处都要能被扫到，否则会误报「族根未声明」。 */
+  var SMALL_ROOTS = [
+    { root: "一", name: "一之族", color: "#6B8E8A" },
+    { root: "正", name: "正之族", color: "#A85751" }
   ];
 
   var SVG_NS = "http://www.w3.org/2000/svg";
@@ -654,6 +701,83 @@
         });
       })();
     });
+
+    renderMiniFams(host, kidsMap, st);
+  }
+
+  /* 小族徽章：一条横排，每个族一枚胶囊。
+   * 内容 = 族名 + 「根 › 子 › 孙」小圆点 + 计数；未收集的圆点是虚线问号。
+   * 圆点可点（已收集的直接开字源卡），和树上节点的行为保持一致。 */
+  function renderMiniFams(host, kidsMap, st) {
+    var box = document.createElement("div");
+    box.className = "fam-box fam-mini";
+
+    var head = document.createElement("div");
+    head.className = "fam-head";
+    head.innerHTML = '<span class="fam-name">小族</span>' +
+      '<span class="fam-mini-tip">字数少，并排挂着</span>';
+    box.appendChild(head);
+
+    var row = document.createElement("div");
+    row.className = "fam-mini-row";
+
+    /* 树是列表式结构，DFS 摊平就够；这些族实际都是单链（一→二→三、正→怔） */
+    function flatten(node, out) {
+      out.push(node);
+      (kidsMap[node] || []).forEach(function (k) { flatten(k, out); });
+      return out;
+    }
+
+    SMALL_ROOTS.forEach(function (t) {
+      var chain = flatten(t.root, []);
+      var total = 0, got = 0;
+      chain.forEach(function (c) {
+        if (!D.chars[c]) return;               // 根是部件（一、正本身不是收集字）
+        total++;
+        if (st.got.indexOf(c) >= 0) got++;
+      });
+
+      var chip = document.createElement("div");
+      chip.className = "mini-fam";
+      chip.style.setProperty("--fam-color", t.color);
+
+      var name = document.createElement("span");
+      name.className = "mini-fam-name";
+      name.textContent = t.name;
+      chip.appendChild(name);
+
+      var wrap = document.createElement("span");
+      wrap.className = "mini-chain";
+      chain.forEach(function (c, i) {
+        if (i) {
+          var sep = document.createElement("span");
+          sep.className = "mini-sep";
+          sep.textContent = "›";
+          wrap.appendChild(sep);
+        }
+        var isChar = !!D.chars[c];
+        var has = isChar && st.got.indexOf(c) >= 0;
+        var dot = document.createElement("span");
+        dot.className = "mini-node" + (isChar ? "" : " is-part") + (has ? "" : " locked");
+        dot.textContent = isChar ? (has ? c : "?") : c;
+        if (isChar && has) {
+          dot.title = c + "（点开看字源卡）";
+          dot.addEventListener("click", function () { showCard(c); });
+        }
+        wrap.appendChild(dot);
+      });
+      chip.appendChild(wrap);
+
+      var cnt = document.createElement("span");
+      cnt.className = "mini-count";
+      cnt.textContent = got + "/" + total;
+      chip.appendChild(cnt);
+
+      row.appendChild(chip);
+    });
+
+    box.appendChild(row);
+    host.appendChild(box);
   }
 
   /* ================= 成就 ================= */
@@ -1233,6 +1357,7 @@
     /* 关于页显示发布版本号 */
     var av = $("#about-version");
     if (av) av.textContent = "v" + D.meta.release;
+    loadHWIndex();
     bindEvents();
     bindSettings();
     renderAll();

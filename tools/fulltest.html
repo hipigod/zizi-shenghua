@@ -131,6 +131,12 @@ f.addEventListener("load", function () {
       var t = el.querySelector(".glyph");
       if (t) fam[t.textContent.trim()] = true;
     });
+    // 2026-10-30 起，一之族（一二三）与正之族（怔）不再画整棵树，
+    // 改成底部的小徽章 .mini-node，这里要把徽章上的字也算进覆盖范围
+    [].slice.call(doc.querySelectorAll(".mini-node")).forEach(function (el) {
+      var t = el.textContent.trim();
+      if (t && t !== "?") fam[t] = true;
+    });
 
     // ---- 7. 逐字：字源卡 + 笔顺动画 ----
     var i = 0, done = 0;
@@ -148,11 +154,17 @@ f.addEventListener("load", function () {
       if (card) {
         var ch = card.querySelector(".cc-char");
         // words 允许为空（如量词字「棵」不组词），但必须有 note 说明原因
+        // 笔顺入口：有数据的字必须有按钮；数据源没收录的（沝、燚）必须给「暂无」提示，
+        // 不允许两个都没有，也不允许明明没数据还给一个点不出东西的按钮
+        var strokeEntry = (c in HW)
+          ? !!card.querySelector(".cc-stroke-btn[data-stroke='" + c + "']")
+          : (!!card.querySelector(".cc-stroke-btn[data-stroke='" + c + "']") ||
+             !!card.querySelector(".cc-stroke-none"));
         okc = !!ch && ch.textContent.trim() === c &&
           !!card.querySelector(".cc-origin") &&
           !!card.querySelector(".cc-fun") &&
           (!!card.querySelector(".cc-words") || !!card.querySelector(".cc-note")) &&
-          !!card.querySelector(".cc-stroke-btn[data-stroke='" + c + "']");
+          strokeEntry;
       }
       res[c].card = okc;
 
@@ -168,7 +180,8 @@ f.addEventListener("load", function () {
           var svg = b.querySelector("svg");
           if (svg && svg.querySelectorAll("path").length > 0) { res[c].stroke = true; step(); return; }
           // 数据源未收录该字（如生僻三叠字）→ 走大字回退，属已知限制，非缺陷
-          if (/暂时取不到/.test(b.textContent)) { res[c].stroke = "nodata"; step(); return; }
+          // 「暂无笔顺数据」= 本地与两个 CDN 都 404；「暂时取不到」= 网络/脚本问题
+          if (/暂时取不到|暂无笔顺数据/.test(b.textContent)) { res[c].stroke = "nodata"; step(); return; }
         }
         if (++tries > 120) { res[c].stroke = "点击后无响应"; step(); return; }
         setTimeout(poll, 80);

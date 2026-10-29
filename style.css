@@ -588,6 +588,16 @@ body.rz-dragging { user-select: none; }
   color: var(--ink-soft);
 }
 .cc-stroke-box { margin: 0 16px 14px; }
+/* 数据源没有笔顺的字：位置和按钮一样，但明确说「没有」，不是假装能点 */
+.cc-stroke-none {
+  margin: 0 16px 14px;
+  padding: 8px;
+  border: 1.5px dashed rgba(43, 43, 43, .18);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: rgba(43, 43, 43, .45);
+  text-align: center;
+}
 
 /* ============================================================
  * ③ 图鉴
@@ -762,6 +772,73 @@ body.rz-dragging { user-select: none; }
   text-align: right;
 }
 .fam-bloom { font-size: 15px; line-height: 1; }
+
+/* 小族徽章：一之族（一→二→三）、正之族（正→怔）这种只有一条短链的族，
+ * 单独撑一张宽卡片右边全是空白，改成并排的胶囊。 */
+.fam-box.fam-mini { padding-bottom: 12px; }
+.fam-mini-tip {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: rgba(43, 43, 43, .42);
+  letter-spacing: .5px;
+}
+.fam-mini-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 4px 10px 0;
+}
+.mini-fam {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 12px 6px 11px;
+  border: 1px solid rgba(43, 43, 43, .1);
+  border-radius: 999px;
+  background: #fffdf6;
+  box-shadow: 0 1px 2px rgba(43, 43, 43, .04);
+}
+.mini-fam-name {
+  font-family: var(--font-kai);
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: var(--ink-soft);
+}
+.mini-chain { display: inline-flex; align-items: center; gap: 4px; }
+.mini-sep { font-size: 11px; color: rgba(43, 43, 43, .24); line-height: 1; }
+.mini-node {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-kai);
+  font-size: 14px;
+  line-height: 1;
+  color: var(--ink);
+  background: #fffdf6;
+  border: 1.5px solid var(--fam-color);
+  cursor: pointer;
+  user-select: none;
+}
+.mini-node.locked {
+  border-style: dashed;
+  border-color: rgba(43, 43, 43, .2);
+  color: rgba(43, 43, 43, .32);
+  cursor: default;
+}
+/* 根是部件（一、正本身不进图鉴）：不描族色，也不可点 */
+.mini-node.is-part {
+  border-color: rgba(43, 43, 43, .32);
+  cursor: default;
+  background: rgba(43, 43, 43, .04);
+}
+.mini-count {
+  font-size: 11px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
 
 /* 树可能比卡片宽（木族 17 个直接子字），横向滚动而不是整体缩小 */
 .fam-scroll {
