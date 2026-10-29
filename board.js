@@ -108,7 +108,8 @@
     /* 只认主键：右键/中键绝不进入拖拽，避免右键拖动把字块误回收 */
     if (e.pointerType === "mouse" && e.button !== 0) return;
     if (!e.target.classList || !e.target.classList.contains("tile")) return;
-    if (e.target.closest(".inventory")) return startInvDrag(e);   // 库存拖出
+    /* 部件条在画布上方，合成字列表在左侧，两处都是拖出源 */
+    if (e.target.closest(".inventory, .partbar")) return startInvDrag(e);
     if (!boardEl.contains(e.target)) return;
 
     var t = findByEl(e.target);
@@ -310,7 +311,7 @@
   function onPressStart(e) {
     pressFired = false;
     if (!e.target.classList || !e.target.classList.contains("tile")) return;
-    if (e.target.closest(".inventory")) return;
+    if (e.target.closest(".inventory, .partbar")) return;
     var t = findByEl(e.target);
     if (!t) return;
     clearTimeout(pressTimer);

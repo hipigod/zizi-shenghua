@@ -44,14 +44,8 @@
   </header>
 
   <div class="layout">
-    <!-- 库存 -->
-    <aside class="inventory" id="inventory">
-      <div class="inv-group" data-group="parts">
-        <div class="inv-head">▾ 部件</div>
-        <div class="inv-items" id="inv-parts"></div>
-      </div>
-      <!-- 各主线分组由 ui.js 动态生成 -->
-    </aside>
+    <!-- 库存（只放已合成的字，部件移到画布上方） -->
+    <aside class="inventory" id="inventory"></aside>
 
     <!-- 分栏调节条：拖动改库存宽度（双击恢复默认） -->
     <div class="rz" id="rz-inv" role="separator" tabindex="0" aria-orientation="vertical"
@@ -59,6 +53,11 @@
 
     <!-- 合成画布 -->
     <main class="board-wrap">
+      <!-- 部件条：从左侧库存挪到画布上方，左侧腾出空间给合成字 -->
+      <div class="partbar" id="partbar">
+        <span class="partbar-label">部件</span>
+        <div class="partbar-items" id="inv-parts"></div>
+      </div>
       <div class="board" id="board" aria-label="合成画布"></div>
       <div class="board-tools">
         <button class="btn btn-ghost btn-sm" id="btn-tidy">整理画布</button>

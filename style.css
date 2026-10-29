@@ -266,6 +266,65 @@ body.rz-dragging,
 body.rz-dragging * { cursor: col-resize !important; }
 body.rz-dragging { user-select: none; }
 
+/* ---------- 部件条（画布上方） ----------
+ * 2026-10-29：从左侧库存挪到画布上沿。左侧只留已合成的字，一屏能多显示
+ * 两个主线分组；部件贴着画布顶边，拖进画布的距离也短了。 */
+.partbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px;
+  border-bottom: 1px solid rgba(43, 43, 43, .1);
+  background: linear-gradient(180deg, rgba(239, 230, 207, .6), rgba(239, 230, 207, .18));
+}
+.partbar-label {
+  flex: none;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--ink-soft);
+  padding: 3px 7px;
+  border: 1px solid rgba(43, 43, 43, .14);
+  border-radius: 6px;
+  background: rgba(255, 253, 246, .75);
+}
+.partbar-items {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 1px 0 3px;
+  -webkit-overflow-scrolling: touch;
+}
+/* 右端渐隐：提示这排还能往右滑（左端不遮，部件少时不至于虚化） */
+.partbar-items {
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 16px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 16px), transparent 100%);
+}
+.partbar-items::-webkit-scrollbar { height: 4px; }
+.partbar-items::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 99px;
+  transition: background .18s ease;
+}
+/* 滚动条平时隐形，鼠标进到部件条才显出来，免得画布顶上多一条灰杠 */
+.partbar:hover .partbar-items::-webkit-scrollbar-thumb {
+  background: rgba(43, 43, 43, .18);
+}
+.partbar-items::-webkit-scrollbar-track { background: transparent; }
+.partbar .tile {
+  position: relative;          /* 覆盖 .tile 的 absolute */
+  flex: none;
+  width: 46px;
+  height: 46px;
+  font-size: 27px;
+  line-height: 43px;
+  box-shadow: 0 1px 2px rgba(43, 43, 43, .1);
+}
+.partbar .tile:hover { border-color: rgba(43, 43, 43, .8); }
+
 /* ---------- 库存 ---------- */
 .inventory {
   border-right: none;   /* 分割线由 .rz 提供 */
@@ -273,6 +332,14 @@ body.rz-dragging { user-select: none; }
   padding: 10px;
   -webkit-overflow-scrolling: touch;
 }
+/* 细滚动条：默认 15~17px，够吃掉小半个字块。
+ * 注意不要同时写标准属性 scrollbar-width，它优先级更高，会把下面的宽度顶掉。 */
+.inventory::-webkit-scrollbar { width: 6px; }
+.inventory::-webkit-scrollbar-thumb {
+  background: rgba(43, 43, 43, .16);
+  border-radius: 99px;
+}
+.inventory::-webkit-scrollbar-track { background: transparent; }
 .inv-group { margin-bottom: 14px; }
 .inv-head {
   font-size: 13px;
@@ -1118,6 +1185,10 @@ body.rz-dragging { user-select: none; }
   .inv-items { flex-wrap: nowrap; }
   .inv-items .tile { font-size: 30px; }
   .board-wrap { order: 1; flex: 1; min-height: 0; }
+  .partbar { padding: 3px 8px; gap: 8px; }
+  /* 手机库存条是横向滚动，默认滚动条有 15px 高，吃掉一整排字块 */
+  .inventory::-webkit-scrollbar { width: auto; height: 4px; }
+  .partbar .tile { width: 44px; height: 44px; font-size: 26px; line-height: 41px; }
   .cardcol { display: none; }
   .topbar-progress .progress-bar { width: 52px; }
   .progress-label { font-size: 11px; }
@@ -1153,9 +1224,20 @@ body.rz-dragging { user-select: none; }
   }
 }
 
-/* 顶栏在窄屏收紧：字库涨到三位数（0/101）后，「设置」按钮被挤出视口 7px */
+/* 顶栏在窄屏收紧：字库涨到三位数（0/102）后，「设置」按钮被挤出视口 7px；
+ * 另外「字字生花」四个字原本会被 flex 压成竖排，这里一起锁住。 */
 @media (max-width: 430px) {
   .topbar { gap: 6px; padding: 0 10px; }
+  .topbar-back {
+    flex: none;
+    white-space: nowrap;
+    font-size: 13px;
+    letter-spacing: 0;
+    padding: 0 6px;
+  }
+  /* 右上角 📖 徽章已经有同样的数字，这里省掉重复文字换空间 */
+  .topbar-progress .progress-label { display: none; }
+  .topbar-progress .progress-bar { width: 34px; }
   .topbar-chip { padding: 5px 8px; }
   .topbar-chip b { margin-left: 1px; }
 }

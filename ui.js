@@ -36,34 +36,32 @@
   /* ================= 库存 ================= */
   function renderInventory() {
     var inv = $("#inventory");
+    var partsBar = $("#inv-parts");
     var st = ZZSH.state.data;
 
-    // 清空重建（保留部件组，重建主线组）
+    /* 部件条在画布上方（2026-10-29 从左侧库存挪出来），单独渲染；
+       左侧只留已合成的字，一屏能多显示两三个主线分组。 */
+    partsBar.innerHTML = "";
+    st.unlockedParts.forEach(function (p) {
+      /* 凡已改成合成字的（田、土、目），一律只在主线组显示。
+         老存档里它们可能还挂在 unlockedParts 上（selfHeal 会迁移，但迁移前
+         若玩家直接刷新就会看到重复字块），这里再兜一道。 */
+      if (D.chars[p]) return;
+      var t = document.createElement("div");
+      t.className = "tile";
+      t.textContent = p;
+      t.dataset.char = p;
+      t.title = "长按/点击查看说明";
+      partsBar.appendChild(t);
+    });
+
+    // 清空重建自己的部分（部件条已独立出去，这里只管回收提示 + 主线组）
     inv.innerHTML = "";
     // 回收提示条（拖拽悬停库存时点亮，必须每次重建，否则被上面的清空带走）
     var tip = document.createElement("div");
     tip.className = "recycle-tip";
     tip.textContent = "🗑 松手就收回";
     inv.appendChild(tip);
-
-    /* 部件组 */
-    var g = document.createElement("div");
-    g.className = "inv-group";
-    g.innerHTML = '<div class="inv-head">▾ 部件</div>';
-    var items = document.createElement("div");
-    items.className = "inv-items";
-    st.unlockedParts.forEach(function (p) {
-      // 已转成合成字并收集到的（田、土），只在主线组显示，避免重复字块
-      if (D.chars[p] && st.got.indexOf(p) >= 0) return;
-      var t = document.createElement("div");
-      t.className = "tile";
-      t.textContent = p;
-      t.dataset.char = p;
-      t.title = "长按/点击查看说明";
-      items.appendChild(t);
-    });
-    g.appendChild(items);
-    inv.appendChild(g);
 
     /* 主线分组：该线的已得字 */
     Object.keys(D.lines).sort(function (a, b) {
@@ -1147,7 +1145,7 @@
       if (sb) { showStroke(sb.dataset.stroke); return; }
       var rc = e.target.closest("[data-card]");
       if (rc) { showCard(rc.dataset.card); return; }
-      var it = e.target.closest(".inventory .tile");
+      var it = e.target.closest(".inventory .tile, .partbar .tile");
       if (!it) return;
       if (touchLayout()) {
         placeToBoardCenter(it.dataset.char); // 触屏（含手机横屏/平板）：放到画布中央

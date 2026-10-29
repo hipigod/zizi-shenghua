@@ -54,6 +54,23 @@ f.addEventListener("load", function () {
       log(w.getComputedStyle(inv).overflowX === "auto", "库存横向可滚动 overflow-x=" + w.getComputedStyle(inv).overflowX);
     } else log(false, "找不到 .inventory / .board-wrap");
 
+    // 5a2. 部件条在画布上方（2026-10-29 从库存里拆出来），且触摸目标够大
+    (function () {
+      var pb = doc.getElementById("partbar");
+      var bd = doc.querySelector(".board");
+      if (!pb || !bd) { log(false, "找不到 .partbar / .board"); return; }
+      var rp = pb.getBoundingClientRect(), rb = bd.getBoundingClientRect();
+      log(rp.bottom <= rb.top + 2,
+        "部件条位于画布上方（部件 bottom=" + Math.round(rp.bottom) + " 画布 top=" + Math.round(rb.top) + "）");
+      var pt = pb.querySelector(".tile");
+      if (!pt) { log(false, "部件条里没有部件"); return; }
+      var rt = pt.getBoundingClientRect();
+      log(Math.round(rt.width) >= 44 && Math.round(rt.height) >= 44,
+        "部件触摸目标 " + Math.round(rt.width) + "×" + Math.round(rt.height) + "px（≥44 为佳）");
+      log(pb.querySelectorAll(".tile").length >= 5,
+        "部件条初始部件数 " + pb.querySelectorAll(".tile").length);
+    })();
+
     // 5b. 竖屏上下布局：左右分栏调节条必须隐藏
     var rzs = doc.querySelectorAll(".rz");
     var rzHidden = [].every.call(rzs, function (r) { return w.getComputedStyle(r).display === "none"; });
@@ -64,12 +81,15 @@ f.addEventListener("load", function () {
     log(w.getComputedStyle(col).display === "none", "窄屏隐藏桌面右侧栏（display=" + w.getComputedStyle(col).display + "）");
 
     // 7. 字块尺寸（苹果建议可点区域 ≥ 44px）
+    /* 部件挪到画布上方后，新存档的库存里一个字都没有，
+       先塞一个已合成的字进去，否则下面按 .inventory .tile 取值会拿到 null */
+    if (Z.state.data.got.indexOf("明") < 0) { Z.state.data.got.push("明"); Z.ui.renderAll(); }
     var t = doc.querySelector(".inventory .tile");
     if (t) {
       var rt = t.getBoundingClientRect();
       log(Math.round(rt.width) >= 44 && Math.round(rt.height) >= 44,
-        "字块可点区域 " + Math.round(rt.width) + "×" + Math.round(rt.height) + "px（≥44 为佳）");
-    }
+        "库存字块可点区域 " + Math.round(rt.width) + "×" + Math.round(rt.height) + "px（≥44 为佳）");
+    } else log(false, "库存里找不到字块（塞了「明」之后仍为空）");
 
     // 8. 顶栏按钮不重叠、在视口内
     var btns = [].slice.call(doc.querySelectorAll("#screen-game .topbar button, #screen-game .topbar-wrap button"));
