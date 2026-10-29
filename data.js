@@ -146,7 +146,6 @@ ZZSH.DATA = {
       fun: "几根木头搭个架子，盖上草，就是瓜地里的看瓜「棚」。",
       words: ["棚子", "瓜棚", "工棚"], note: "" },
 
-/* ===== 主线二 · 日月星辰（11） ===== */
     /* ===== 主线2 · 日月星辰（12） ===== */
 
     "明": { pinyin: "míng", structure: "左右", line: "riyue", rare: false, strokes: 8, quizMode: "full", quizDesc: "白天最亮的和夜里接班的凑一起，亮堂堂", family: "日",
@@ -205,13 +204,12 @@ ZZSH.DATA = {
       fun: "太阳天天挂在头顶，把地烤得干干的，一滴雨都不下——这就是「旱」。",
       words: ["干旱", "旱灾", "旱季"], note: "日上干下，会意字里最直观的一个：太阳把土地晒干。" },
 
-/* ===== 主线三 · 人来人往（26） ===== */
     "相": { pinyin: "xiāng", structure: "左右", line: "riyue", rare: false, strokes: 9, quizMode: "full", quizDesc: "睁大眼睛，仔细打量一棵树长得直不直", family: "木",
       origin: "用眼睛察看树木。《说文解字》：相，省视也。",
       originSource: "《说文解字》",
       fun: "眼睛盯着一棵树，看它长直了没——宰相也要有双好眼睛。",
       words: ["相互", "互相", "相貌"], note: "" },
-    /* ===== 主线3 · 人来人往（19） ===== */
+    /* ===== 主线3 · 人来人往（22） ===== */
 
     "从": { pinyin: "cóng", structure: "左右", line: "renwu", rare: false, strokes: 4, quizMode: "full", quizDesc: "一个在前走，另一个紧紧跟在后头", family: "人",
       origin: "二人相随而行。",
@@ -310,7 +308,23 @@ ZZSH.DATA = {
       originSource: "",
       fun: "眼睛看过的样子，存进心里，就是「想」。",
       words: ["想念", "思想", "理想"], note: "形声字：相表音，心表意。" },
-    /* ===== 主线4 · 水火之间（19） ===== */
+        "夯": { pinyin: "hāng", structure: "上下", line: "renwu", rare: false, strokes: 5, quizMode: "full", quizDesc: "使劲把地基砸结实", family: "大",
+      origin: "用力砸实地基。「大」加「力」会意：使出大力气夯土。",
+      originSource: "",
+      fun: "叉开腿、憋足劲，把松土一层层砸实——这就是「夯」。",
+      words: ["夯实", "夯土", "打夯"], note: "" },
+    "奋": { pinyin: "fèn", structure: "上下", line: "renwu", rare: false, strokes: 8, quizMode: "full", quizDesc: "鼓起劲头，拼命往前冲", family: "大",
+      origin: "振奋、奋发。简化字由「大」加「田」重新会意；繁体作「奮」。",
+      originSource: "",
+      fun: "憋足一口气往前冲，劲头全都使出来——这就是「奋」。",
+      words: ["奋斗", "兴奋", "奋发"], note: "繁体作「奮」，简化字用大 + 田重新会意。" },
+    "丛": { pinyin: "cóng", structure: "上下", line: "renwu", rare: false, strokes: 5, quizMode: "full", quizDesc: "许多草木挤在一起，密密地长成一片", family: "从",
+      origin: "聚集。「从」加「一」：众人相随，聚在一处。",
+      originSource: "",
+      fun: "两个人一前一后，底下一条地平线——聚在一起就是「丛」。",
+      words: ["丛林", "丛书", "草丛"], note: "繁体作「叢」，简化字用从 + 一重新会意。" },
+
+/* ===== 主线4 · 水火之间（19） ===== */
 
     "炎": { pinyin: "yán", structure: "上下", line: "shuihuo", rare: false, strokes: 8, quizMode: "full", quizDesc: "火苗烧得旺，热浪一层压一层往上冒", family: "火",
       origin: "火光上升；热。",
@@ -398,7 +412,6 @@ ZZSH.DATA = {
       fun: "火太大了，饭烧焦了，一股「煳」味儿。",
       words: ["烧煳了", "煳味"], note: "生僻彩蛋，口语里常用：饭煳了。" },
 
-/* ===== 主线五 · 品物流形（18） ===== */
     "焚": { pinyin: "fén", structure: "上下", line: "shuihuo", rare: false, strokes: 12, quizMode: "full", quizDesc: "放把大火把荒草杂树烧掉，古时这样开田", family: "林",
       origin: "烧林垦荒。甲骨文像手持火把烧林。《说文解字》：焚，烧田也。",
       originSource: "《说文解字》",
@@ -409,7 +422,7 @@ ZZSH.DATA = {
       originSource: "",
       fun: "有火有土的地方，就能煮出一锅热汤——灶王爷的家。",
       words: ["灶台", "炉灶", "大灶"], note: "繁体作「竈」，简化字用火 + 土重新会意。" },
-    /* ===== 主线5 · 厚土田园（12） ===== */
+    /* ===== 主线5 · 厚土田园（13） ===== */
 
     "土": { pinyin: "tǔ", structure: "独体", line: "houtu", rare: false, strokes: 3, quizMode: "full", quizDesc: "地面上鼓起来的一小坨泥", family: "十",
       origin: "土地。《说文解字》：土，地之吐生物者也——地面上能长出东西的那一层。",
@@ -474,7 +487,13 @@ ZZSH.DATA = {
       originSource: "《说文解字》",
       fun: "一根木棍横在头顶，挡住飞来的石头——最早的盾牌就叫「干」。",
       words: ["干净", "饼干", "干活"], note: "与「土」只差一横的位置：干是横在上、竖笔悬空。" },
-    /* ===== 主线6 · 门户之间（17） ===== */
+        "奎": { pinyin: "kuí", structure: "上下", line: "houtu", rare: true, strokes: 9, quizMode: "skip", quizDesc: "二十八宿之一的名字，也常用于人名", family: "圭",
+      origin: "奎宿，二十八宿之一。《说文解字》：奎，两髀之间也，从大圭声——本义是胯，后借作星名。",
+      originSource: "《说文解字》",
+      fun: "古人给天上的星星起名，把几颗星连起来叫「奎」——说是管文章的星。",
+      words: ["奎宿", "奎星"], note: "生僻彩蛋。奎星主文章，旧时学宫多建有奎文阁。" },
+
+/* ===== 主线6 · 门户之间（17） ===== */
 
     "闪": { pinyin: "shǎn", structure: "半包围", line: "menhu", rare: false, strokes: 5, quizMode: "full", quizDesc: "门儿一开，身影一晃就不见了", family: "人",
       origin: "人在门中忽隐忽现；突然显现。",
@@ -507,7 +526,6 @@ ZZSH.DATA = {
       fun: "门后面横着插一根棍子，外面推也推不开——这根棍子就叫「闩」。",
       words: ["门闩", "上闩"], note: "生僻彩蛋，会意极直白：门里一横就是闩。" },
 
-/* ===== 主线四 · 水火之间（23） ===== */
     "吕": { pinyin: "lǚ", structure: "上下", line: "menhu", rare: false, strokes: 6, quizMode: "skip", family: "口",
       origin: "本义与脊骨有关（象两节脊椎相连）；后借用于音律、姓氏。",
       originSource: "《说文解字》",
@@ -665,6 +683,10 @@ recipes: [
     { a: "月", b: "干", results: ["肝"] },
     { a: "月", b: "旦", results: ["胆"] },
     { a: "门", b: "一", results: ["闩"] },
+    { a: "大", b: "力", results: ["夯"] },
+    { a: "大", b: "田", results: ["奋"] },
+    { a: "大", b: "圭", results: ["奎"] },
+    { a: "从", b: "一", results: ["丛"] },
   ],
 
   /* ---------- 解锁表 ----------
