@@ -1,0 +1,236 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>分栏拖动调节 · 检查</title>
+<style>
+  body { margin:0; font:13px/1.7 system-ui; background:#fff; color:#111; }
+  #log { padding:10px 14px; white-space:pre-wrap; }
+  .ok { color:#2e7d32; } .no { color:#c62828; font-weight:700; } .warn { color:#e65100; }
+  iframe { border:1px solid #ccc; display:block; }
+</style>
+<iframe id="f" src="../index.html" width="1280" height="820" style="width:1280px;height:820px"></iframe>
+<div id="log">running…</div>
+<script>
+var L = [], el = document.getElementById("log"), fails = 0;
+function log(ok, msg) {
+  if (!ok) fails++;
+  L.push('<span class="' + (ok ? "ok" : "no") + '">' + (ok ? "✓" : "✗") + "</span> " + msg);
+  el.innerHTML = L.join("\n");
+}
+var f = document.getElementById("f");
+
+var phase = 0;
+f.addEventListener("load", function () {
+  var w = f.contentWindow, doc = f.contentDocument, Z = w.ZZSH;
+  if (phase++ > 0) { checkPersist(w, doc); return; }
+  w.__errs = [];
+  w.addEventListener("error", function (e) { w.__errs.push(e.message || "error"); });
+  if (!Z) { log(false, "ZZSH 未挂载"); finish(); return; }
+
+  var rzInv = doc.getElementById("rz-inv"), rzCard = doc.getElementById("rz-card");
+  var inv = doc.querySelector(".inventory"), card = doc.getElementById("cardcol");
+  var board = doc.getElementById("board"), layout = doc.querySelector(".layout");
+
+  function raf() {
+    return new Promise(function (r) { w.requestAnimationFrame(function () { r(); }); });
+  }
+  function px(v) { return Math.round(v); }
+  function W(elm) { return px(elm.getBoundingClientRect().width); }
+
+  function pe(type, x, y, kind) {
+    return new w.PointerEvent(type, {
+      clientX: x, clientY: y, button: 0, buttons: type === "pointerup" ? 0 : 1,
+      pointerId: 1, pointerType: kind || "mouse", isPrimary: true,
+      bubbles: true, cancelable: true
+    });
+  }
+  /* 在调节条上从中心拖动 dx 像素 */
+  async function drag(handle, dx, kind) {
+    var r = handle.getBoundingClientRect();
+    var x = r.left + r.width / 2, y = r.top + r.height / 2;
+    handle.dispatchEvent(pe("pointerdown", x, y, kind));
+    await raf();
+    handle.dispatchEvent(pe("pointermove", x + dx, y, kind));
+    await raf();
+    handle.dispatchEvent(pe("pointerup", x + dx, y, kind));
+    await raf(); await raf();
+  }
+  function dblclick(handle) {
+    var r = handle.getBoundingClientRect();
+    handle.dispatchEvent(new w.MouseEvent("dblclick", {
+      clientX: r.left + r.width / 2, clientY: r.top + r.height / 2,
+      bubbles: true, cancelable: true
+    }));
+  }
+  function key(handle, k, shift) {
+    handle.dispatchEvent(new w.KeyboardEvent("keydown", {
+      key: k, shiftKey: !!shift, bubbles: true, cancelable: true
+    }));
+  }
+  function stored() {
+    try { return JSON.parse(w.localStorage.getItem("zzsh_layout_v1") || "null"); }
+    catch (e) { return null; }
+  }
+
+  (async function () {
+    /* ---------- 0. 前置：清掉上次的布局，进游戏屏 ---------- */
+    try { w.localStorage.removeItem("zzsh_layout_v1"); } catch (e) {}
+    doc.getElementById("btn-start").click();
+    await new Promise(function (r) { setTimeout(r, 500); });
+    doc.documentElement.style.setProperty("--inv-w", "240px");
+    doc.documentElement.style.setProperty("--card-w", "320px");
+    await raf(); await raf();
+
+    log(!doc.getElementById("screen-game").classList.contains("hidden"), "已进入游戏屏");
+
+    /* ---------- 1. 结构 ---------- */
+    log(!!rzInv && !!rzCard, "两条调节条存在");
+    log(w.getComputedStyle(rzInv).display !== "none", "桌面端调节条可见（display=" + w.getComputedStyle(rzInv).display + "）");
+    log(w.getComputedStyle(rzInv).cursor === "col-resize",
+      "光标为 col-resize（实际 " + w.getComputedStyle(rzInv).cursor + "）");
+    log(rzInv.getAttribute("role") === "separator" && rzCard.getAttribute("role") === "separator",
+      "role=separator（无障碍语义）");
+    log(rzInv.tabIndex === 0 && rzCard.tabIndex === 0, "可用 Tab 聚焦（tabindex=0）");
+    var cols = w.getComputedStyle(layout).gridTemplateColumns.split(" ").map(parseFloat);
+    log(cols.length === 5, "布局为 5 列：[" + cols.map(Math.round).join(", ") + "]");
+    log(Math.abs(cols[0] - 240) <= 1 && Math.abs(cols[4] - 320) <= 1,
+      "初始列宽 库存=" + Math.round(cols[0]) + " 画布=" + Math.round(cols[2]) + " 卡片=" + Math.round(cols[4]));
+    var inv0 = W(inv), card0 = W(card), brd0 = W(board);
+
+    /* ---------- 2. 拖库存条向右 100 ---------- */
+    await drag(rzInv, 100);
+    var inv1 = W(inv), brd1 = W(board);
+    log(Math.abs(inv1 - (inv0 + 100)) <= 2, "拖库存条 +100px → 库存 " + inv0 + "→" + inv1);
+    log(brd1 < brd0, "画布同步变窄 " + brd0 + "→" + brd1 + "（1fr 自适应）");
+    log(Math.abs(W(card)) === Math.abs(card0), "字源卡宽度不受影响（" + W(card) + "）");
+
+    /* ---------- 3. 拖卡片条向左 80（卡片变宽） ---------- */
+    var cardPre = W(card);
+    await drag(rzCard, -80);
+    var card2 = W(card);
+    log(Math.abs(card2 - (cardPre + 80)) <= 2, "拖卡片条 -80px → 卡片 " + cardPre + "→" + card2);
+    log(W(board) < brd1, "画布再次收窄到 " + W(board));
+
+    /* ---------- 4. 下限：库存不能小于 164 ---------- */
+    await drag(rzInv, -9999);
+    log(W(inv) === 164, "库存拖到底被夹在最小值 164（实际 " + W(inv) + "）");
+
+    /* ---------- 5. 上限：画布至少留 320 ---------- */
+    await drag(rzCard, 9999);          // 卡片挤到最小，给库存腾空间
+    var cardMin = W(card);
+    log(cardMin === 240, "卡片拖到底被夹在最小值 240（实际 " + cardMin + "）");
+    await drag(rzInv, 9999);           // 库存顶到最大
+    var invMax = W(inv), brdMax = W(board);
+    log(brdMax >= 320, "库存顶到上限时画布仍 ≥320（画布 " + brdMax + "，库存 " + invMax + "）");
+    log(invMax <= 460, "库存不超过上限 460（实际 " + invMax + "）");
+    var sumOK = Math.abs(invMax + cardMin + brdMax + 12 - W(layout)) <= 2;
+    log(sumOK, "三段之和 = 布局宽（" + invMax + "+" + cardMin + "+" + brdMax + "+12 ≈ " + W(layout) + "）");
+
+    /* ---------- 6. 双击复位 ---------- */
+    dblclick(rzInv); await raf(); await raf();
+    log(W(inv) === 240, "双击库存条复位到 240（实际 " + W(inv) + "）");
+    dblclick(rzCard); await raf(); await raf();
+    log(W(card) === 320, "双击卡片条复位到 320（实际 " + W(card) + "）");
+
+    /* ---------- 7. 键盘微调 ---------- */
+    rzInv.focus();
+    key(rzInv, "ArrowRight"); await raf(); await raf();
+    log(W(inv) === 256, "聚焦后 → 键 +16（实际 " + W(inv) + "）");
+    key(rzInv, "ArrowLeft", true); await raf(); await raf();
+    log(W(inv) === 216, "Shift+← 键 -40（实际 " + W(inv) + "）");
+    key(rzInv, "Home"); await raf(); await raf();
+    log(W(inv) === 240, "Home 复位（实际 " + W(inv) + "）");
+
+    /* ---------- 8. 持久化 ---------- */
+    await drag(rzInv, 60);
+    var st = stored();
+    log(!!st && Math.abs(st.inv - W(inv)) <= 1, "宽度写入 localStorage：" + JSON.stringify(st));
+
+    /* ---------- 9. 拖动视觉反馈 ---------- */
+    var r = rzInv.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    rzInv.dispatchEvent(pe("pointerdown", cx, cy));
+    await raf();
+    log(rzInv.classList.contains("dragging"), "拖动中调节条有 dragging 类");
+    log(doc.body.classList.contains("rz-dragging"), "拖动中全局光标锁定 col-resize");
+    rzInv.dispatchEvent(pe("pointerup", cx, cy));
+    await raf(); await raf();
+    log(!rzInv.classList.contains("dragging") && !doc.body.classList.contains("rz-dragging"),
+      "松手后清掉拖动状态");
+
+    /* ---------- 10. 触摸也能拖 ---------- */
+    var before = W(inv);
+    await drag(rzInv, -40, "touch");
+    log(Math.abs(W(inv) - (before - 40)) <= 2, "触摸拖动生效 " + before + "→" + W(inv));
+
+    /* ---------- 11. 画布变窄后字块不越界（必须让画布真的变窄） ---------- */
+    Z.board.clearBoard && Z.board.clearBoard();
+    await raf();
+    var bw0 = W(board);
+    var t1 = Z.board.createTile("木", 20, 60);
+    var t2 = Z.board.createTile("日", Math.round(bw0 / 2), 160);
+    var t3 = Z.board.createTile("水", bw0 - 80, 260);   // 贴着右边界
+    await raf();
+    /* 向左拖卡片条 = 卡片变宽 = 画布变窄（向右拖是变宽，测不出收敛） */
+    await drag(rzCard, -300);
+    await raf(); await raf();
+    await new Promise(function (r2) { setTimeout(r2, 250); });
+    var bw = W(board);
+    log(bw < bw0, "画布确实收窄 " + bw0 + " → " + bw);
+    var bLeft = board.getBoundingClientRect().left;
+    var outs = [];
+    [t1, t2, t3].forEach(function (t) {
+      var rr = t.el.getBoundingClientRect();
+      var l = px(rr.left - bLeft), r = px(rr.right - bLeft), b = px(rr.bottom - board.getBoundingClientRect().top);
+      if (l < -1 || r > bw + 1 || b > board.getBoundingClientRect().height + 1) {
+        outs.push(t.char + "(" + l + "~" + r + ")");
+      }
+    });
+    log(outs.length === 0, "3 个字块全部收回画布内" + (outs.length ? "，越界：" + outs.join(" ") : "（画布宽 " + bw + "）"));
+    var t3r = px(t3.el.getBoundingClientRect().right - bLeft);
+    log(t3r <= bw + 1, "贴边的那个字被推到右边界内（右缘 " + t3r + " ≤ " + bw + "）");
+
+    /* ---------- 12. 无 JS 报错 ---------- */
+    log(w.__errs.length === 0, "无脚本错误" + (w.__errs.length ? "：" + w.__errs.join(";") : ""));
+
+    /* ---------- 13. 刷新后保持（重载 iframe 验证 load 路径） ---------- */
+    dblclick(rzInv); await raf(); await raf();
+    dblclick(rzCard); await raf(); await raf();
+    await drag(rzInv, 300 - W(inv));   // 故意设成非默认值 300，默认值验证才有意义
+    var savedBefore = stored();
+    log(W(inv) === 300 && !!savedBefore && savedBefore.inv === 300 && savedBefore.card === 320,
+      "刷新前写入：" + JSON.stringify(savedBefore));
+    el.innerHTML = L.join("\n") + "\n<span class=\"warn\">…重载 iframe 验证持久化…</span>";
+    f.src = "../index.html?reload=1";
+  })().catch(function (e) {
+    log(false, "异常：" + (e && e.message));
+    finish();
+  });
+
+  async function checkPersist(w, doc) {
+    await new Promise(function (r) { setTimeout(r, 700); });
+    if (!doc.getElementById("screen-game").classList.contains("hidden")) {
+      /* 已在游戏屏 */
+    } else {
+      doc.getElementById("btn-start").click();
+      await new Promise(function (r) { setTimeout(r, 500); });
+    }
+    var invNow = Math.round(doc.querySelector(".inventory").getBoundingClientRect().width);
+    log(invNow === 300, "刷新后库存宽度恢复为 300（实际 " + invNow + "）");
+    var cardNow = Math.round(doc.getElementById("cardcol").getBoundingClientRect().width);
+    log(cardNow === 320, "刷新后字源卡恢复 320（实际 " + cardNow + "）");
+    var savedNow = null;
+    try { savedNow = JSON.parse(w.localStorage.getItem("zzsh_layout_v1") || "null"); } catch (e) {}
+    log(!!savedNow && savedNow.inv === 300 && savedNow.card === 320,
+      "存储值未被刷新改写（" + JSON.stringify(savedNow) + "）");
+    log(true, "—— 检查结束 ——");
+    finish();
+  }
+
+  function finish() {
+    var bad = fails;
+    w.fetch("http://localhost:8765/report", {
+      method: "POST",
+      body: JSON.stringify({ stat: "resizer：失败 " + bad + " 项", md: el.textContent })
+    });
+  }
+});
+</script>

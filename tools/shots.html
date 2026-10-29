@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <title>截图助手</title>
 <!-- 用法：tools/shots.html?w=390&h=844&view=game
-     view: cover 封面 / game 游戏屏 / card 字源卡 / codex 图鉴 / tree 字族树 -->
+     view: cover 封面 / game 游戏屏 / card 字源卡 / codex 图鉴 / tree 字族树 / rz 分栏演示 -->
 <style>html,body{margin:0;padding:0;background:#000}iframe{display:block;border:0}</style>
 <iframe id="f" src="../index.html"></iframe>
 <script>
@@ -25,6 +25,22 @@ f.addEventListener("load", function () {
       var t = doc.querySelector(".inventory .tile");
       if (t && w.matchMedia("(max-width: 768px)").matches) t.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
       Z.ui.showCard("明");
+    }
+    if (view === "rz") {
+      /* 演示：库存拉到 320、卡片拉到 380，并让右侧调节条停在「拖动中」高亮态 */
+      doc.documentElement.style.setProperty("--inv-w", "320px");
+      doc.documentElement.style.setProperty("--card-w", "380px");
+      /* headless 虚拟时间会冻结 CSS transition 时钟，演示时关掉过渡才能截到终态 */
+      var st = doc.createElement("style");
+      st.textContent = ".rz::before,.rz::after{transition:none!important}";
+      doc.head.appendChild(st);
+      var ri = doc.getElementById("rz-inv"), rc = doc.getElementById("rz-card");
+      if (rc) rc.classList.add("dragging");
+      if (ri) ri.classList.add("dragging");
+      Z.ui.renderInventory();
+      Z.board.createTile("木", 40, 60);
+      Z.board.createTile("日", 200, 200);
+      Z.board.createTile("水", 360, 340);
     }
     if (view === "codex") { doc.getElementById("btn-codex").click(); }
     if (view === "tree") {

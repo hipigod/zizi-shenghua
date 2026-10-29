@@ -468,6 +468,8 @@
     clearBoard: clearBoard,
     count: count,
     hasChar: hasChar,
+    /* 外部（如拖动分栏）改变画布尺寸后，主动把越界字块收回画布 */
+    clampAll: function () { tiles.forEach(position); },
     lockInput: lockInput,
     highlightChars: highlightChars,
     mergeAnimation: mergeAnimation,

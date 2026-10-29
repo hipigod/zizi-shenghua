@@ -54,6 +54,11 @@ f.addEventListener("load", function () {
       log(w.getComputedStyle(inv).overflowX === "auto", "库存横向可滚动 overflow-x=" + w.getComputedStyle(inv).overflowX);
     } else log(false, "找不到 .inventory / .board-wrap");
 
+    // 5b. 竖屏上下布局：左右分栏调节条必须隐藏
+    var rzs = doc.querySelectorAll(".rz");
+    var rzHidden = [].every.call(rzs, function (r) { return w.getComputedStyle(r).display === "none"; });
+    log(rzHidden, "竖屏隐藏左右分栏调节条（" + rzs.length + " 条 display=none）");
+
     // 6. 桌面右侧栏应隐藏，卡片走抽屉
     var col = doc.getElementById("cardcol");
     log(w.getComputedStyle(col).display === "none", "窄屏隐藏桌面右侧栏（display=" + w.getComputedStyle(col).display + "）");

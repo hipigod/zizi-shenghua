@@ -31,6 +31,10 @@
   --line-shuihuo: #4A7FA5;
   --line-pinwu: #7E57C2;
   --block: 64px;
+  /* 三栏分宽度：由 resizer.js 拖动改写 --inv-w / --card-w，画布取 1fr 自适应 */
+  --inv-w: 240px;
+  --card-w: 320px;
+  --rz-w: 6px;
   --radius: 12px;
   --shadow: 0 2px 6px rgba(43, 43, 43, .12);
   --font-kai: "LXGW WenKai", "LXGW WenKai Lite", "Kaiti SC", "STKaiti", KaiTi, "楷体", serif;
@@ -201,17 +205,70 @@ button { font-family: inherit; cursor: pointer; }
   50% { box-shadow: 0 0 0 8px rgba(201, 162, 39, .25); }
 }
 
-/* 三栏布局 */
+/* 三栏布局（两条可拖动的调节条各占一列） */
 .layout {
   flex: 1;
   display: grid;
-  grid-template-columns: 240px 1fr 320px;
+  grid-template-columns: var(--inv-w) var(--rz-w) 1fr var(--rz-w) var(--card-w);
   min-height: 0;
 }
 
+/* ---------- 分栏调节条 ---------- */
+.rz {
+  position: relative;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 6;
+  outline: none;
+  background: transparent;
+}
+/* 分割线本体（原 inventory / cardcol 的边框移到这里，避免双线） */
+.rz::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: rgba(43, 43, 43, .12);
+  transition: background .15s ease, width .15s ease;
+}
+/* 中间的小抓手，只在上手时出现 */
+.rz::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 26px;
+  transform: translate(-50%, -50%);
+  border-radius: 3px;
+  background: rgba(43, 43, 43, .22);
+  opacity: 0;
+  transition: opacity .15s ease, background .15s ease;
+}
+.rz:hover::before,
+.rz:focus-visible::before,
+.rz.dragging::before {
+  width: 2px;
+  background: var(--gold);
+}
+.rz:hover::after,
+.rz:focus-visible::after,
+.rz.dragging::after {
+  opacity: 1;
+  background: var(--gold);
+}
+.rz:focus-visible { box-shadow: inset 0 0 0 2px rgba(201, 162, 39, .35); }
+/* 拖动期间光标全程保持 col-resize（鼠标移出调节条也不会跳回 grab） */
+body.rz-dragging,
+body.rz-dragging * { cursor: col-resize !important; }
+body.rz-dragging { user-select: none; }
+
 /* ---------- 库存 ---------- */
 .inventory {
-  border-right: 1px solid rgba(43, 43, 43, .12);
+  border-right: none;   /* 分割线由 .rz 提供 */
   overflow-y: auto;
   padding: 10px;
   -webkit-overflow-scrolling: touch;
@@ -373,7 +430,7 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---------- 字源卡（桌面右栏） ---------- */
 .cardcol {
-  border-left: 1px solid rgba(43, 43, 43, .12);
+  border-left: none;   /* 分割线由 .rz 提供 */
   overflow-y: auto;
   padding: 14px;
   -webkit-overflow-scrolling: touch;
@@ -941,6 +998,8 @@ button { font-family: inherit; cursor: pointer; }
   :root { --block: 56px; }
   .tile { font-size: 34px; }
   .layout { display: flex; flex-direction: column; }
+  /* 竖屏是上下布局，没有左右分栏可拖 */
+  .rz { display: none; }
   .inventory {
     order: 2;
     flex: none;
@@ -978,6 +1037,7 @@ button { font-family: inherit; cursor: pointer; }
 /* 横屏手机：恢复左右布局 */
 @media (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
   .layout { display: grid; grid-template-columns: 200px 1fr; }
+  .rz { display: none; }
   .cardcol { display: none; }
   .inventory {
     height: auto;

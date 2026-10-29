@@ -34,10 +34,10 @@
   <header class="topbar">
     <button class="topbar-back" id="btn-home" title="回到封面">字字生花</button>
     <div class="topbar-progress" id="progress-wrap" title="图鉴进度">
-      <span class="progress-label">图鉴 <b id="progress-num">0</b>/<b id="progress-total">95</b></span>
+      <span class="progress-label">图鉴 <b id="progress-num">0</b>/<b id="progress-total">99</b></span>
       <div class="progress-bar"><i id="progress-fill"></i></div>
     </div>
-    <button class="topbar-chip" id="btn-codex" title="汉字图鉴">📖<b id="codex-badge-num">0</b>/<span id="codex-badge-total">95</span></button>
+    <button class="topbar-chip" id="btn-codex" title="汉字图鉴">📖<b id="codex-badge-num">0</b>/<span id="codex-badge-total">99</span></button>
     <button class="topbar-chip" id="btn-achv" title="成就">🏆<b id="achv-num">0</b>/<span class="achv-total">8</span></button>
     <button class="topbar-chip" id="btn-hint" title="提示">💡</button>
     <button class="topbar-chip" id="btn-settings" title="设置">⚙️</button>
@@ -53,6 +53,10 @@
       <!-- 各主线分组由 ui.js 动态生成 -->
     </aside>
 
+    <!-- 分栏调节条：拖动改库存宽度（双击恢复默认） -->
+    <div class="rz" id="rz-inv" role="separator" tabindex="0" aria-orientation="vertical"
+         aria-label="拖动调节库存区宽度" aria-valuenow="240" title="拖动调节宽度 · 双击恢复默认"></div>
+
     <!-- 合成画布 -->
     <main class="board-wrap">
       <div class="board" id="board" aria-label="合成画布"></div>
@@ -63,6 +67,10 @@
       </div>
       <div class="storage-warn hidden" id="storage-warn">本次进度不会保存（浏览器禁用了存储）</div>
     </main>
+
+    <!-- 分栏调节条：拖动改字源卡宽度（双击恢复默认） -->
+    <div class="rz" id="rz-card" role="separator" tabindex="0" aria-orientation="vertical"
+         aria-label="拖动调节字源卡区宽度" aria-valuenow="320" title="拖动调节宽度 · 双击恢复默认"></div>
 
     <!-- 字源卡 -->
     <aside class="cardcol" id="cardcol">
@@ -76,7 +84,7 @@
   <header class="topbar">
     <button class="topbar-back" id="btn-codex-back">← 返回</button>
     <div class="topbar-title">汉字图鉴</div>
-    <div class="topbar-progress"><span class="progress-label"><b id="codex-num">0</b>/<b id="codex-total">95</b></span></div>
+    <div class="topbar-progress"><span class="progress-label"><b id="codex-num">0</b>/<b id="codex-total">99</b></span></div>
   </header>
   <div class="codex-tabs">
     <button class="codex-tab active" id="tab-wall">格子墙</button>
@@ -219,6 +227,7 @@
 <script src="board.js"></script>
 <script src="ui.js"></script>
 <script src="share.js"></script>
+<script src="resizer.js"></script>
 <script src="main.js"></script>
 </body>
 </html>
