@@ -342,7 +342,7 @@ ZZSH.DATA = {
       fun: "两个人一前一后，底下一条地平线——聚在一起就是「丛」。",
       words: ["丛林", "丛书", "草丛"], note: "繁体作「叢」，简化字用从 + 一重新会意。" },
 
-/* ===== 主线4 · 水火之间（19） ===== */
+/* ===== 主线4 · 水火之间（20） ===== */
 
     "炎": { pinyin: "yán", structure: "上下", line: "shuihuo", rare: false, strokes: 8, quizMode: "full", quizDesc: "火苗烧得旺，热浪一层压一层往上冒", family: "火",
       origin: "火光上升；热。",
@@ -379,6 +379,11 @@ ZZSH.DATA = {
       originSource: "",
       fun: "眼睛里装不住的水，从目边滚下来——古人为眼泪造了个多形象的字。",
       words: ["眼泪", "泪水", "泪珠"], note: "「水」在左边写作「氵」。" },
+    "沁": { pinyin: "qìn", structure: "左右", line: "shuihuo", rare: false, strokes: 7, quizMode: "full", quizDesc: "一股凉丝丝的气透进来，舒服到了骨头缝里", family: "水",
+      origin: "水名。《说文解字》：沁，水，出上党羊头山，东南入河。从水心声。本指沁水，后引申为水渗入、凉气透进心里。",
+      originSource: "《说文解字》",
+      fun: "左边是水，右边是心——凉丝丝的水汽一直渗到心里去，就是「沁」。",
+      words: ["沁人心脾", "沁凉", "沁园春"], note: "「水」在左边写作「氵」；右边的「心」表音。" },
     "灭": { pinyin: "miè", structure: "上下", line: "shuihuo", rare: false, strokes: 5, quizMode: "full", quizDesc: "平平的东西压下去，火苗就熄了", family: "火",
       origin: "熄火。简化字新造会意：一横压住火。",
       originSource: "",
@@ -656,6 +661,7 @@ recipes: [
     { a: "沝", b: "水", results: ["淼"] },
     { a: "炎", b: "水", results: ["淡"] },
     { a: "水", b: "目", results: ["泪"] },
+    { a: "水", b: "心", results: ["沁"] },
     { a: "火", b: "一", results: ["灭"] },
     { a: "口", b: "大", results: ["因"] },
     { a: "小", b: "大", results: ["尖"] },
