@@ -17,7 +17,7 @@ const fs = require("fs");
 
 const CHROME = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const PORT = 9333;
-const URL = "http://localhost:8765/tools/fulltest.html";
+const URL = "http://127.0.0.1:8765/tools/fulltest.html";
 const TIMEOUT = (parseInt(process.argv[2], 10) || 300) * 1000;
 const PROFILE = path.join(os.tmpdir(), "zzsh-ft-" + Date.now());
 
@@ -35,7 +35,7 @@ function getJSON(p) {
 
 (async () => {
   const child = spawn(CHROME, [
-    "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+    "--headless=new", "--disable-gpu", "--no-proxy-server", "--proxy-bypass-list=*", "--no-first-run", "--no-default-browser-check",
     "--remote-debugging-port=" + PORT,
     "--user-data-dir=" + PROFILE,
     "--window-size=1400,900",

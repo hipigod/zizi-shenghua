@@ -10,7 +10,7 @@ const os = require("os");
 const [A = "水", B = "心", WANT = "沁"] = process.argv.slice(2);
 const CHROME = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const PORT = 9393;
-const URL = "http://localhost:8765/index.html";
+const URL = "http://127.0.0.1:8765/index.html";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const getJSON = (p) =>
   new Promise((res, rej) => {
@@ -29,7 +29,7 @@ const getJSON = (p) =>
   const child = spawn(
     CHROME,
     [
-      "--headless=new", "--disable-gpu", "--no-first-run",
+      "--headless=new", "--disable-gpu", "--no-proxy-server", "--proxy-bypass-list=*", "--no-first-run",
       "--remote-debugging-port=" + PORT,
       "--user-data-dir=" + path.join(os.tmpdir(), "zzsh-nc-" + Date.now()),
       "--window-size=1280,860", "about:blank",

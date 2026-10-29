@@ -22,7 +22,7 @@
 var $ = function (s) { return document.querySelector(s); };
 var f = document.getElementById("frame");
 var ROWS = [], HEAD = ["字", "可合成", "字源卡", "笔顺动画", "据义造字", "提示可命中", "图鉴可见", "字族树", "笔画数"];
-var HW_BASE = "http://localhost:8765/tools/_hwdata/";
+var HW_BASE = "/tools/_hwdata/";
 
 function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
 function stat(t) { $("#stat").textContent = t; }
@@ -54,7 +54,7 @@ f.addEventListener("load", function () {
     };
 
     // ---- 3. 笔画数权威基准 ----
-    rawFetch("http://localhost:8765/tools/hw_strokes.json").then(function (r) { return r.json(); }).then(function (HW) {
+    rawFetch("/tools/hw_strokes.json").then(function (r) { return r.json(); }).then(function (HW) {
       run(HW);
     }, function () { run({}); });
   }
@@ -241,7 +241,7 @@ f.addEventListener("load", function () {
     document.title = "FULLTEST-DONE";
     // 结果回传本地服务，落盘为 tools/fulltest_result.json
     try {
-      w.fetch("http://localhost:8765/report", {
+      w.fetch("/report", {
         method: "POST",
         body: JSON.stringify({ stat: $("#stat").textContent, md: md.join("\n") })
       });

@@ -10,7 +10,7 @@ const os = require("os");
 
 const CHROME = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const PORT = 9391;
-const URL = "http://localhost:8765/tools/merge_check.html";
+const URL = "http://127.0.0.1:8765/tools/merge_check.html";
 const DONE = "MERGE-DONE";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -33,6 +33,8 @@ const getJSON = (p) =>
     [
       "--headless=new",
       "--disable-gpu",
+      "--no-proxy-server",
+      "--proxy-bypass-list=*",
       "--no-first-run",
       "--remote-debugging-port=" + PORT,
       "--user-data-dir=" + path.join(os.tmpdir(), "zzsh-merge-" + Date.now()),

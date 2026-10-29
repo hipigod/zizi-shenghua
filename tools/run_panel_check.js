@@ -13,7 +13,7 @@ const os = require("os");
 
 const CHROME = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const PORT = 9405;
-const URL = "http://localhost:8765/index.html";
+const URL = "http://127.0.0.1:8765/index.html";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const getJSON = (p) =>
   new Promise((res, rej) => {
@@ -26,7 +26,7 @@ const getJSON = (p) =>
 
 (async () => {
   const child = spawn(CHROME, [
-    "--headless=new", "--disable-gpu", "--no-first-run",
+    "--headless=new", "--disable-gpu", "--no-proxy-server", "--proxy-bypass-list=*", "--no-first-run",
     "--remote-debugging-port=" + PORT,
     "--user-data-dir=" + path.join(os.tmpdir(), "zzsh-panel-" + Date.now()),
     "--window-size=1280,860", "about:blank",

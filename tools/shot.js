@@ -30,7 +30,7 @@ const getJSON = (p) => new Promise((resolve, reject) => {
 
 (async () => {
   const child = spawn(CHROME, [
-    "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+    "--headless=new", "--disable-gpu", "--no-proxy-server", "--proxy-bypass-list=*", "--no-first-run", "--no-default-browser-check",
     "--remote-debugging-port=" + PORT, "--user-data-dir=" + PROFILE,
     "--window-size=" + W + "," + H, "--hide-scrollbars", "about:blank",
   ], { stdio: "ignore" });
