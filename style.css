@@ -979,25 +979,122 @@ body.rz-dragging { user-select: none; }
 }
 @keyframes panelin { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .choose-title { font-size: 14px; text-align: center; margin-bottom: 16px; color: var(--ink-soft); line-height: 1.7; }
-.choose-items { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.choose-items { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .choose-item {
   position: relative;
   width: 84px;
-  height: 96px;
+  height: 108px;
+  padding: 8px 4px 6px;
   border-radius: 14px;
   border: 2px solid rgba(43, 43, 43, .4);
   background: #fffdf6;
-  font-family: var(--font-kai);
-  font-size: 46px;
   color: var(--ink);
+  font-size: 0;              /* 内容字号交给 .ch-fig 自己定，别继承 */
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
+  justify-content: flex-start;
+  gap: 4px;
+  transition: border-color .16s ease, transform .16s ease;
 }
-.choose-item .ch-label { font-family: var(--font-ui); font-size: 11px; color: var(--ink-soft); letter-spacing: 1px; }
-.choose-item.got { border-color: rgba(43, 43, 43, .18); color: rgba(43, 43, 43, .3); }
+.choose-item:not(.got):hover {
+  border-color: rgba(43, 43, 43, .85);
+  transform: translateY(-2px);
+}
+/* 摆法示意图（2026-10-29）：只画部件怎么摆，不画结果字。
+ * 原来的面板直接把困/呆/杏/束 摆出来让人挑，等于报答案。 */
+.ch-fig {
+  position: relative;
+  width: 72px;
+  height: 58px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0;
+}
+.ch-fig i, .ch-fig b {
+  font-style: normal;
+  font-weight: 400;
+  font-family: var(--font-kai);
+  line-height: 1;
+  color: var(--ink);
+}
+.ch-fig i { font-size: 23px; }
+.ch-fig.v { flex-direction: column; gap: 0; }
+.ch-fig.v.gap { gap: 8px; }
+.ch-fig.h { flex-direction: row; gap: 2px; }
+/* 包围 / 贯穿：外框用几何方框表示，内层部件缩在中间。
+ * 不写「口」字——一写就等于把「困」「束」拼出来了。 */
+.ch-fig.around s, .ch-fig.pierce s {
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 46px;
+  height: 42px;
+  border: 2px solid rgba(43, 43, 43, .45);
+  border-radius: 4px;
+  z-index: 0;
+}
+.ch-fig.around i, .ch-fig.pierce i {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  z-index: 2;
+}
+/* 贯穿：一条竖线穿过方框，上下都探出去 */
+.ch-fig.pierce::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 3px;
+  bottom: 3px;
+  width: 1.5px;
+  transform: translateX(-50%);
+  background: rgba(43, 43, 43, .5);
+  border-radius: 1px;
+  z-index: 1;
+}
+.ch-fig.cross b {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(43, 43, 43, .32);
+}
+/* 竖笔出头：田字打底，一条竖线从中间伸出去 */
+.ch-fig.cross b { font-size: 46px; }
+.ch-fig.cross::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--ink);
+  border-radius: 1px;
+}
+.ch-fig.cross.down::before { top: 50%; bottom: 3px; }
+.ch-fig.cross.up::before { top: 3px; bottom: 50%; }
+.ch-fig.cross.both::before { top: 3px; bottom: 3px; }
+
+.choose-item .ch-label {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  letter-spacing: 0;
+  text-align: center;
+  max-width: 76px;
+  word-break: keep-all;   /* 中文别在词中间断开 */
+}
+.choose-item.got { border-color: rgba(43, 43, 43, .18); }
+/* 已收录的整张卡淡化，但摆法仍看得清 */
+.choose-item.got .ch-fig i,
+.choose-item.got .ch-fig b { color: rgba(43, 43, 43, .24); }
+.choose-item.got .ch-fig s { border-color: rgba(43, 43, 43, .16); }
+.choose-item.got .ch-fig.cross::before { background: rgba(43, 43, 43, .24); }
 .choose-item.got::after {
   content: "✓ 已收录";
   position: absolute;
@@ -1230,6 +1327,20 @@ body.rz-dragging { user-select: none; }
     animation-iteration-count: 1 !important;
     transition-duration: .01s !important;
   }
+}
+
+/* 多解面板在窄屏：4 张摆法卡必须挤在一行，否则 3+1 排布很难看 */
+@media (max-width: 430px) {
+  .choose-panel { padding: 18px 12px; }
+  .choose-items { gap: 8px; }
+  .choose-item { width: 72px; height: 100px; padding: 6px 3px 5px; gap: 3px; }
+  .ch-fig { width: 64px; height: 54px; }
+  .ch-fig i { font-size: 21px; }
+  .ch-fig.v.gap { gap: 6px; }
+  .ch-fig.around s, .ch-fig.pierce s { width: 40px; height: 36px; }
+  .ch-fig.around i, .ch-fig.pierce i { font-size: 21px; }
+  .ch-fig.cross b { font-size: 40px; }
+  .choose-item .ch-label { font-size: 9px; max-width: 66px; }
 }
 
 /* 顶栏在窄屏收紧：字库涨到三位数（0/102）后，「设置」按钮被挤出视口 7px；

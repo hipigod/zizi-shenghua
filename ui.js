@@ -670,20 +670,42 @@
   /* 修复：原先把字块对挂在共享的 recipe 数据对象上（recipe._lastPair），污染静态配方表；
    * 且面板没有取消通道，点开就必须选。 */
   var chooseCtx = null;   // {recipe, pair}
+
+  /* 摆法示意图：把两个部件按位置画出来，**不显示结果字**。
+   * 原来是直接把这四个字摆出来让你挑，等于报答案；现在给你的是「口在上」「口包住木」
+   * 这种摆法，玩家得自己想到对应哪个字——这才算合成。 */
+  function layoutFig(L) {
+    if (!L) return "";
+    var k = L.k || "v";
+    if (k === "h") {
+      return '<span class="ch-fig h"><i>' + L.left + "</i><i>" + L.right + "</i></span>";
+    }
+    if (k === "around" || k === "pierce") {
+      /* 外框故意画成几何方框，不写「口」字：
+         直接把口字放大就变成"困""束"本身了，等于把答案拼出来。 */
+      return '<span class="ch-fig ' + k + '"><s></s><i>' + L.inner + "</i></span>";
+    }
+    if (k === "cross") {
+      return '<span class="ch-fig cross ' + (L.dir || "both") + '"><b>' + L.outer + "</b></span>";
+    }
+    return '<span class="ch-fig v' + (L.gap ? " gap" : "") + '">' +
+      '<i style="font-size:' + (L.size || 23) + 'px">' + L.top + "</i><i>" + L.bot + "</i></span>";
+  }
+
   function showChoosePanel(recipe, pair) {
     chooseCtx = { recipe: recipe, pair: pair || null };
     var wrap = $("#choose-items");
     wrap.innerHTML = "";
-    recipe.results.forEach(function (c, i) {
+    recipe.results.forEach(function (c) {
       var got = ZZSH.engine.has(c);
       var it = document.createElement("button");
       it.className = "choose-item" + (got ? " got" : "");
-      it.innerHTML = '<span style="font-size:44px;line-height:1">' + c + "</span>" +
-        '<span class="ch-label">' + (recipe.hints && recipe.hints[c] ? recipe.hints[c] : D.chars[c].pinyin) + "</span>";
+      it.innerHTML = layoutFig(recipe.layouts && recipe.layouts[c]) +
+        '<span class="ch-label">' + ((recipe.hints && recipe.hints[c]) || "") + "</span>";
       it.addEventListener("click", function () { onChoose(c); });
       wrap.appendChild(it);
     });
-    $("#choose-hint").textContent = "已收录的字会打勾；全部收录后再合，只看动画";
+    $("#choose-hint").textContent = "挑一种摆法——摆好了才揭晓是哪个字";
     $("#choose-mask").classList.remove("hidden");
   }
   function onChoose(c) {
