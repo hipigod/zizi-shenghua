@@ -1,0 +1,145 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>合成消耗原料检查</title>
+<style>
+  body { margin:0; font:13px/1.7 system-ui; background:#fff; color:#111; display:flex; gap:16px; align-items:flex-start; }
+  #f { width:390px; height:844px; border:1px solid #ccc; flex:none; }
+  #log { padding:10px 14px; white-space:pre-wrap; flex:1; min-width:0; }
+  .ok { color:#2e7d32; } .no { color:#c62828; font-weight:700; }
+</style>
+<iframe id="f" src="../index.html" width="390" height="844"></iframe>
+<div id="log">running…</div>
+<script>
+/* 2026-10-29 新增：合成后原料必须在画布上消失，只留结果。
+ * 之前原料会分列左右留在画布上，连合几次就堆满零散字块（用户明确要求改掉）。
+ * 这里全部走真实指针事件：从部件条拖出 → 拖到另一块上松手 → 数画布上的块。 */
+var L = [], el = document.getElementById("log"), fails = 0;
+function log(ok, msg) {
+  if (!ok) fails++;
+  L.push('<span class="' + (ok ? "ok" : "no") + '">' + (ok ? "✓" : "✗") + "</span> " + msg);
+  el.innerHTML = L.join("\n");
+}
+var f = document.getElementById("f");
+f.addEventListener("load", function () {
+  var w = f.contentWindow, doc = f.contentDocument, Z = w.ZZSH;
+  if (!Z) { log(false, "ZZSH 未挂载"); done(); return; }
+  doc.getElementById("btn-start").click();
+  setTimeout(run, 500);
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function pe(t, x, y, bt) {
+    return new w.PointerEvent(t, {
+      bubbles: true, cancelable: true, pointerId: 31, pointerType: "touch",
+      isPrimary: true, button: 0, buttons: bt, clientX: x, clientY: y
+    });
+  }
+  function boardEl() { return doc.querySelector(".board"); }
+  function chars() {
+    return [].slice.call(boardEl().querySelectorAll(".tile")).map(function (e) { return e.dataset.char; });
+  }
+  function closeDrawer() {
+    var d = doc.getElementById("card-drawer");
+    if (d) d.classList.add("hidden");
+    var m = doc.getElementById("card-mask");
+    if (m) m.classList.add("hidden");
+  }
+  function reset() {
+    Z.board.clearBoard();
+    closeDrawer();
+  }
+  /* 从部件条真实拖出一个字到画布坐标 */
+  async function dragPart(char, cx, cy) {
+    var t = doc.querySelector('.partbar .tile[data-char="' + char + '"]');
+    if (!t) { log(false, "部件条里找不到「" + char + "」"); return false; }
+    var r = t.getBoundingClientRect();
+    t.dispatchEvent(pe("pointerdown", r.left + r.width / 2, r.top + r.height / 2, 1));
+    doc.dispatchEvent(pe("pointermove", (r.left + cx) / 2, (r.top + cy) / 2, 1));
+    doc.dispatchEvent(pe("pointermove", cx, cy, 1));
+    doc.dispatchEvent(pe("pointerup", cx, cy, 0));
+    await sleep(90);
+    return true;
+  }
+  function centerOf(char) {
+    var t = boardEl().querySelector('.tile[data-char="' + char + '"]');
+    if (!t) return null;
+    var r = t.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+
+  async function run() {
+    var g = doc.getElementById("guide-mask"); if (g) g.classList.add("hidden");
+    var gs = doc.getElementById("guide-skip"); if (gs) gs.style.display = "none";
+    reset();
+
+    var bd = boardEl().getBoundingClientRect();
+    var A = { x: bd.left + bd.width * 0.3, y: bd.top + bd.height * 0.3 };
+    var B = { x: bd.left + bd.width * 0.65, y: bd.top + bd.height * 0.55 };
+
+    log(Z.board.count() === 0, "起手画布为空（" + Z.board.count() + " 块）");
+
+    /* 用例 A：日 + 月 = 明 */
+    await dragPart("日", A.x, A.y);
+    log(Z.board.count() === 1, "拖入「日」后画布 " + Z.board.count() + " 块");
+    var c = centerOf("日");
+    await dragPart("月", c.x, c.y);
+    await sleep(800);
+    var cs = chars();
+    log(Z.board.count() === 1 && cs[0] === "明",
+      "日+月 合成后只剩 1 块且为「明」（实际 " + Z.board.count() + " 块：" + (cs.join("") || "空") + "）");
+    closeDrawer();
+
+    /* 用例 B：木 + 木 = 林，换到画布另一处，确认不是位置巧合 */
+    reset();
+    await dragPart("木", B.x, B.y);
+    var c2 = centerOf("木");
+    await dragPart("木", c2.x, c2.y);
+    await sleep(800);
+    var cs2 = chars();
+    log(Z.board.count() === 1 && cs2[0] === "林",
+      "木+木 合成后只剩 1 块且为「林」（实际 " + Z.board.count() + " 块：" + (cs2.join("") || "空") + "）");
+    closeDrawer();
+
+    /* 用例 C：没有配方的两个字 —— 不能消耗，两块都要留在画布上 */
+    reset();
+    await dragPart("木", A.x, A.y);
+    var c3 = centerOf("木");
+    await dragPart("口", c3.x, c3.y);
+    await sleep(800);
+    var cs3 = chars();
+    log(Z.board.count() === 2 && cs3.indexOf("木") >= 0 && cs3.indexOf("口") >= 0,
+      "木+口 不能合成时两块都保留（实际 " + Z.board.count() + " 块：" + (cs3.join("") || "空") + "）");
+    closeDrawer();
+
+    /* 用例 D：连续三次合成（不清空画布），验证结果一块块攒着、原料从不残留。
+       每次换一个落点，避免新块与上一次的结果重叠造成误判。 */
+    reset();
+    var spots = [
+      { x: bd.left + bd.width * 0.22, y: bd.top + bd.height * 0.18 },
+      { x: bd.left + bd.width * 0.62, y: bd.top + bd.height * 0.18 },
+      { x: bd.left + bd.width * 0.22, y: bd.top + bd.height * 0.58 }
+    ];
+    var seq = [["日", 0], ["木", 1], ["人", 2]];
+    for (var i = 0; i < seq.length; i++) {
+      await dragPart(seq[i][0], spots[seq[i][1]].x, spots[seq[i][1]].y);
+      var before = Z.board.count();
+      var cl = centerOf(seq[i][0]);
+      var second = seq[i][0] === "木" ? "木" : (seq[i][0] === "日" ? "月" : "木");
+      await dragPart(second, cl.x, cl.y);
+      await sleep(800);
+      log(Z.board.count() === before,
+        "第 " + (i + 1) + " 次合成：合前 " + before + " 块 → 合后 " + Z.board.count() +
+        " 块（" + seq[i][0] + "+" + second + "）");
+      closeDrawer();
+    }
+    var left = chars();
+    log(left.length === 3, "三次合成后画布共 3 块，无原料残留：" + left.join(""));
+    log(boardEl().querySelectorAll(".merging-out").length === 0, "画布上没有残留的淡出元素");
+    done();
+  }
+
+  function done() {
+    document.title = "MERGE-DONE fails=" + fails;
+    log(fails === 0, fails === 0 ? "全部通过" : "共 " + fails + " 项失败");
+  }
+});
+</script>

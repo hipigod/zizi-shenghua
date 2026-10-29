@@ -62,9 +62,15 @@
     t.el.style.top = t.y + "px";
   }
 
-  function removeTile(t) {
+  /* 只把字块从 tiles 里摘掉，DOM 留着——合成时原料还要在画布上淡出一下才消失。 */
+  function detachTile(t) {
     var i = tiles.indexOf(t);
     if (i >= 0) tiles.splice(i, 1);
+    if (t.el) t.el.style.pointerEvents = "none";
+  }
+
+  function removeTile(t) {
+    detachTile(t);
     if (t.el && t.el.parentNode) t.el.parentNode.removeChild(t.el);
   }
 
@@ -347,31 +353,44 @@
     }, 200);
   }
 
-  /* 合成动画：两个字块向中点靠拢 → 分列左右，中间留给新字。
+  /* 合成动画：两个字块向新字的位置汇聚 → 一起消隐 → 新字从原地长出来。
+   * 原料用完就消失，画布上只留结果；否则连合几次就堆满零散字块。
    * done(cx, cy) 回调传回新字的画布坐标（左上角，已夹紧） */
   function mergeAnimation(a, b, newChar, done) {
     var s = TILE();
+    var r = boardRect();
     var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-    var dur = 200;
+    /* 先算出新字的最终落点（夹紧画布内），原料朝这个点汇聚：
+       靠边合成时不会出现「原料在中间消失、新字却偏到一边」的错位 */
+    var cx = clamp(mx, 0, Math.max(0, r.width - s));
+    var cy = clamp(my, 0, Math.max(0, r.height - s));
+    var gather = 150, fade = 180;
+
     [a, b].forEach(function (t) {
-      t.el.style.transition = "left " + dur + "ms ease, top " + dur + "ms ease";
+      if (!t.el) return;
+      t.el.style.transition = "left " + gather + "ms cubic-bezier(.4, 0, .2, 1), top " + gather +
+        "ms cubic-bezier(.4, 0, .2, 1), transform " + fade + "ms ease-out, opacity " + fade + "ms ease-out";
     });
-    a.x = mx; a.y = my; position(a);
-    b.x = mx; b.y = my; position(b);
+    a.x = cx; a.y = cy; position(a);
+    b.x = cx; b.y = cy; position(b);
+
     setTimeout(function () {
-      /* 新字落中点，原料分列左右；靠边时整体平移，保证三块都在画布内且不重叠 */
-      var r = boardRect();
-      var gap = 10;
-      var minX = s + gap, maxX = Math.max(minX, r.width - 2 * s - gap);
-      var cx = clamp(mx, minX, maxX);
-      var cy = clamp(my, 0, Math.max(0, r.height - s));
-      a.x = cx - s - gap; a.y = cy; position(a);
-      b.x = cx + s + gap; b.y = cy; position(b);
-      setTimeout(function () {
-        [a, b].forEach(function (t) { if (t.el) t.el.style.transition = ""; });
-      }, dur);
+      /* 先摘出 tiles（淡出期间不能被拖、不能被重叠检测命中），DOM 留到动画结束 */
+      detachTile(a);
+      detachTile(b);
+      [a, b].forEach(function (t) {
+        if (!t.el) return;
+        t.el.style.left = cx + "px";
+        t.el.style.top = cy + "px";
+        t.el.classList.add("merging-out");
+      });
       if (typeof done === "function") done(cx, cy);
-    }, dur);
+      setTimeout(function () {
+        [a, b].forEach(function (t) {
+          if (t.el && t.el.parentNode) t.el.parentNode.removeChild(t.el);
+        });
+      }, fade + 60);
+    }, gather);
   }
 
   /* ---------- 整理画布 ---------- */

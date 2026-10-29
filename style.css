@@ -411,6 +411,14 @@ body.rz-dragging { user-select: none; }
   0% { transform: scale(1.6); filter: brightness(1.3); }
   100% { transform: scale(1); }
 }
+/* 合成时原料的收场：缩一下、淡出，新字在同一位置长出来（原料不再留在画布上） */
+.tile.merging-out {
+  transform: scale(.42) rotate(-6deg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
 .tile.drop-hint {
   transform: scale(1.1);
   box-shadow: 0 0 0 3px var(--gold), 0 0 16px rgba(201, 162, 39, .5);
