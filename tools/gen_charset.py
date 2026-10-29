@@ -8,7 +8,7 @@ import io, os, re, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FILES = ["data.js", "ui.js", "engine.js", "board.js", "fx.js", "share.js",
          "main.js", "state.js", "index.html"]
-PUNCT = "，。！？、；：（）「」『』《》…—·～“”‘’"
+PUNCT = "，。！？、；：（）「」『』《》…—·／～“”‘’"
 
 def strip_comments(s):
     s = re.sub(r"/\*.*?\*/", "", s, flags=re.S)
