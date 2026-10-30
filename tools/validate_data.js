@@ -1,13 +1,11 @@
 /* ============================================================
  * 字字生花 · tools/validate_data.js
- * 数据自检（node 环境）：
- *   1. 无序键冲突检查
- *   2. 配方结果字都存在于字表
- *   3. BFS 可达性（模拟解锁链，全部 62 字可达、无死字）
- *   4. 必注字 note 非空
- *   5. 生僻占比 ≤ 20%
- *   6. 成就/解锁引用字存在
- *   7. 全流程模拟合成（含多结果、解锁、成就、结局）
+ * 数据自检（node 环境），对应《测试用例_v1.3.md》A 模块：
+ *   A1  无序键冲突      A2  引用完整性      A3  无死字
+ *   A4  BFS 可达性      A5  必注字 note     A6  生僻占比
+ *   A7  成就/解锁引用   A8  全流程模拟      A9  strokes 取值
+ *   A10 strokes 基准    A11 quiz 数据       A12 family 链
+ *   A13 字族树根覆盖    A14 主线归属        A15 多解面板数据
  * 用法：node tools/validate_data.js
  * ============================================================ */
 "use strict";
@@ -339,6 +337,85 @@ function warn(msg) { warns.push(msg); }
       (missing.length || orphan.length ? "有漏字！" : "通过"));
   })();
   if (bad.length) err(`R4 family 校验失败：${bad.join("、")}`);
+})();
+
+/* ---------- 12. A10 strokes 与权威基准比对 ----------
+ * tools/hw_strokes.json 是 hanzi-writer-data 的实际笔画数，作为独立基准，
+ * 用来发现图鉴剪影上「N 画」写错的情况（剪影唯一的线索就是笔画数）。 */
+(function () {
+  const basePath = path.join(__dirname, "hw_strokes.json");
+  if (!fs.existsSync(basePath)) {
+    console.log("12. A10 strokes 基准：未找到 tools/hw_strokes.json，跳过");
+    return;
+  }
+  const HW = JSON.parse(fs.readFileSync(basePath, "utf8"));
+  const bad = [];
+  let checked = 0;
+  Object.keys(D.chars).forEach(c => {
+    if (!(c in HW)) return;                 // 数据源未收录，不计入比对
+    checked++;
+    if (HW[c] !== D.chars[c].strokes) bad.push(`${c}: 基准${HW[c]}/实为${D.chars[c].strokes}`);
+  });
+  console.log(`12. A10 strokes 基准：比对 ${checked} 字，${bad.length ? "不一致：" + bad.join("、") : "全部一致，通过"}`);
+  if (bad.length) err(`strokes 与笔顺基准不一致：${bad.join("、")}`);
+})();
+
+/* ---------- 13. A14 主线归属 ----------
+ * 历史坑：字库从 62 扩到 166、主线从 6 扩到 10 的过程中，出现过
+ * ① 字的 line 指向已删除的主线 ② 某条线一个字都没有 ③ 分区计数对不上。
+ * 这里一次性钉死。 */
+(function () {
+  const bad = [];
+  const ids = Object.keys(D.lines);
+  const orders = ids.map(id => D.lines[id].order).sort((a, b) => a - b);
+  if (orders.join(",") !== ids.map((_, i) => i + 1).join(",")) {
+    err(`主线 order 不是连续唯一的 1~${ids.length}：实际 [${orders.join(",")}]`);
+  }
+  const count = {};
+  ids.forEach(id => { count[id] = 0; });
+  Object.keys(D.chars).forEach(c => {
+    const ln = D.chars[c].line;
+    if (!D.lines[ln]) { bad.push(`${c} line="${ln}" 不存在`); return; }
+    count[ln]++;
+  });
+  ids.forEach(id => {
+    if (!count[id]) bad.push(`主线「${D.lines[id].name}」(${id}) 一个字都没有`);
+    D.lines[id].order = D.lines[id].order;
+  });
+  const total = Object.keys(D.chars).length;
+  const sum = Object.values(count).reduce((a, b) => a + b, 0);
+  if (sum !== total) bad.push(`主线字数合计 ${sum} ≠ 字表 ${total}`);
+  const dist = ids
+    .sort((a, b) => D.lines[a].order - D.lines[b].order)
+    .map(id => `${D.lines[id].name}${count[id]}`).join("/");
+  console.log(`13. A14 主线归属：${ids.length} 条线，分布 ${dist}，合计 ${sum}/${total}，` +
+    `${bad.length ? "问题：" + bad.join("、") : "通过"}`);
+  if (bad.length) err(`主线归属校验失败：${bad.join("、")}`);
+})();
+
+/* ---------- 14. A15 多解面板数据 ----------
+ * 多解面板靠「摆法示意图」引导，若布局里直接画了结果字，等于报答案；
+ * 缺 hint 则会显示空白按钮。两种都是缺陷。 */
+(function () {
+  const bad = [];
+  let multi = 0;
+  D.recipes.forEach(r => {
+    if (r.results.length < 2) return;
+    multi++;
+    if (new Set(r.results).size !== r.results.length) bad.push(`${r.a}+${r.b} results 内部重复`);
+    if (!r.layouts || !r.hints) { bad.push(`${r.a}+${r.b} 缺 layouts 或 hints`); return; }
+    r.results.forEach(c => {
+      if (!r.layouts[c]) { bad.push(`${r.a}+${r.b} 缺「${c}」的摆法`); return; }
+      if (!r.hints[c]) bad.push(`${r.a}+${r.b} 缺「${c}」的摆法说明`);
+      const L = r.layouts[c];
+      ["top", "bot", "left", "right", "inner", "outer"].forEach(k => {
+        if (!L[k]) return;
+        r.results.forEach(x => { if (L[k] === x) bad.push(`${r.a}+${r.b} 摆法里直接画了结果字「${x}」`); });
+      });
+    });
+  });
+  console.log(`14. A15 多解配方：${multi} 条，${bad.length ? "问题：" + bad.join("、") : "摆法与说明齐备且不泄底，通过"}`);
+  if (bad.length) err(`多解配方校验失败：${bad.join("、")}`);
 })();
 
 /* ---------- 汇总 ---------- */

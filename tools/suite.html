@@ -1,0 +1,890 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>字字生花 · 功能测试套件</title>
+<style>
+  body { margin:0; font:13px/1.7 system-ui; background:#fff; color:#111; }
+  #frame { width:1280px; height:820px; border:0; }
+  #stat { padding:8px 16px; background:#f6f2e8; font-size:13px; position:sticky; top:0; z-index:9; }
+  #out { padding:12px 16px; }
+  .grp { margin:14px 0 6px; font-weight:700; font-size:14px; border-left:4px solid #C9A227; padding-left:8px; }
+  .ln { white-space:pre-wrap; font-family:ui-monospace,Consolas,monospace; font-size:12px; }
+  .ok { color:#2e7d32; } .no { color:#c62828; font-weight:700; } .sk { color:#8a6d3b; }
+</style>
+<iframe id="frame" src="../index.html"></iframe>
+<div id="stat">running…</div>
+<div id="out"></div>
+<script>
+/* ============================================================
+ * 字字生花 · 功能测试套件（对应《测试用例_v1.3.md》E ~ L 模块）
+ *
+ * 与逐字全量 fulltest.html 的分工：
+ *   fulltest 回答「166 个字每个字都好不好」，本套件回答「功能有没有坏」。
+ * 全部走真实页面（iframe 里跑 index.html），用真实入口（点按钮 / 拖字块），
+ * 不直接调用内部函数绕开 UI——绕开会测不到「树不同步」这类接线 bug。
+ *
+ * 结果挂在 window.__SUITE__ 上，由 run_suite.js 通过 CDP 取走。
+ * ========================================================== */
+var frame = document.getElementById("frame");
+var W = function () { return frame.contentWindow; };
+var DD = function () { return frame.contentDocument; };
+var $ = function (s) { return DD().querySelector(s); };
+var $$ = function (s) { return [].slice.call(DD().querySelectorAll(s)); };
+
+var CASES = [];           // {id, name, ok, extra}
+var stat = function (t) { document.getElementById("stat").textContent = t; };
+
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
+function rec(id, name, ok, extra) {
+  CASES.push({ id: id, name: name, ok: ok, extra: extra || "" });
+  render();
+}
+function note(msg) { CASES.push({ note: msg }); render(); }
+function render() {
+  var html = "";
+  CASES.forEach(function (c) {
+    if (c.note) { html += '<div class="grp">' + esc(c.note) + "</div>"; return; }
+    html += '<div class="ln">' + (c.ok === true ? '<span class="ok">✓</span>'
+      : c.ok === "skip" ? '<span class="sk">—</span>' : '<span class="no">✗</span>') +
+      " " + esc(c.id + " " + c.name) +
+      (c.extra ? '  <span class="sk">← ' + esc(String(c.extra).slice(0, 220)) + "</span>" : "") + "</div>";
+  });
+  document.getElementById("out").innerHTML = html;
+}
+
+/* ---------- 通用工具（全部作用于 iframe 内部） ---------- */
+function b64(o) { return W().btoa(unescape(encodeURIComponent(JSON.stringify(o)))); }
+/* 「纯部件」列表：partInfo 里仍保留了「田/土/目/大」四条（兼容老存档），
+ * 但它们现在是合成字。若把它们塞进 unlockedParts，selfHeal 会把它们转成已收集，
+ * 凭空多出 4 个字，里程碑/连击的计数全被带偏 —— 测试环境和真人存档不等价。 */
+function allParts() {
+  var D = W().ZZSH.DATA;
+  return Object.keys(D.partInfo).filter(function (p) { return !D.chars[p]; });
+}
+function baseSave(got, parts) {
+  return {
+    version: 1, got: got.slice(),
+    unlockedParts: parts || allParts(),
+    achievements: [],
+    stats: { tries: 0, fails: 0, hints: 0, panels: 0, startAt: 0, minorEndAt: 0 },
+    settings: { sound: false, strokeAnim: true },
+    guide: { done: true, step: 99 }, flags: {}
+  };
+}
+function loadSave(got, parts) {
+  var Z = W().ZZSH;
+  Z.state.data = Z.state.importCode(b64(baseSave(got, parts)));
+  Z.engine.selfHeal();
+  Z.board.clearBoard();
+  Z.ui.renderAll();
+  var g = DD().getElementById("guide-mask"); if (g) g.classList.add("hidden");
+  var drawer = DD().getElementById("card-drawer"); if (drawer) drawer.classList.add("hidden");
+  var m = DD().getElementById("drawer-mask"); if (m) m.classList.add("hidden");
+  return Z.state.data;
+}
+function clearFloats() { $$(".float-word").forEach(function (e) { e.remove(); }); }
+function floats() { return $$(".float-word").map(function (e) { return e.className + "|" + e.textContent; }); }
+function toastText() { var t = DD().getElementById("toast"); return t ? t.innerText : ""; }
+/* toast 是队列 + 3400ms 长驻的，直接读会读到上一条。
+ * 判定前先排空队列（等 .show 落下），再把文本擦掉，避免假阳性。 */
+async function drainToast(maxMs) {
+  var t0 = Date.now();
+  while (Date.now() - t0 < (maxMs || 16000)) {
+    var el = DD().getElementById("toast");
+    if (el && el.className.indexOf("show") < 0) {
+      el.textContent = ""; el.className = "toast";
+      return true;
+    }
+    await sleep(150);
+  }
+  return false;
+}
+async function waitToast(re, ms) {
+  var t0 = Date.now();
+  while (Date.now() - t0 < (ms || 5000)) {
+    if (re.test(toastText())) return true;
+    await sleep(120);
+  }
+  return false;
+}
+function got() { return W().ZZSH.state.data.got.slice(); }
+
+/* ---------- 拖拽（在 iframe 内构造 PointerEvent） ---------- */
+function pe(type, x, y, bt) {
+  /* 括号不能省：new W().PointerEvent(...) 会被解析成「调用」构造函数 */
+  return new (W().PointerEvent)(type, {
+    bubbles: true, cancelable: true, pointerId: 31, pointerType: "touch",
+    isPrimary: true, button: 0, buttons: bt, clientX: x, clientY: y
+  });
+}
+function tileEl(char) {
+  return DD().querySelector('.partbar .tile[data-char="' + char + '"]') ||
+         DD().querySelector('.inventory .tile[data-char="' + char + '"]') ||
+         DD().querySelector('#board .tile[data-char="' + char + '"]');
+}
+function dragTo(char, x, y) {
+  var t = tileEl(char);
+  if (!t) return "no-tile:" + char;
+  var r = t.getBoundingClientRect();
+  var d = DD();
+  t.dispatchEvent(pe("pointerdown", r.left + r.width / 2, r.top + r.height / 2, 1));
+  d.dispatchEvent(pe("pointermove", (r.left + x) / 2, (r.top + y) / 2, 1));
+  d.dispatchEvent(pe("pointermove", x, y, 1));
+  d.dispatchEvent(pe("pointerup", x, y, 0));
+  return "ok";
+}
+function boardPt(fx, fy) {
+  var r = DD().getElementById("board").getBoundingClientRect();
+  return { x: Math.round(r.left + r.width * fx), y: Math.round(r.top + r.height * fy) };
+}
+function centerOf(char) {
+  var t = DD().querySelector('#board .tile[data-char="' + char + '"]');
+  if (!t) return null;
+  var r = t.getBoundingClientRect();
+  return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+}
+/* 拖两个部件合成。每个用例开一块干净的画布：残留字块会被新拖出的字块碰到，
+ * 触发意外的「无效组合」，把要测的连击序列打断。 */
+async function merge(a, b, waitMs) {
+  W().ZZSH.board.clearBoard();
+  await sleep(60);
+  var p = boardPt(0.35, 0.42);
+  var r1 = dragTo(a, p.x, p.y);
+  await sleep(160);
+  if (r1 !== "ok") return "拖出失败:" + a;
+  var c = centerOf(a);
+  if (!c) return "画布上没有:" + a;
+  dragTo(b, c.x, c.y);
+  await sleep(waitMs || 900);
+  return true;
+}
+
+/* 连击计数是 ui.js 的模块级变量，只有一次「合成失败」才会归零。
+ * 用例之间不会自动重置，连击用例前要主动制造一次失败并购零，
+ * 否则上一组留下的连击会串到这一组（实跑中见过「连中 7」）。 */
+async function failOnce(D) {
+  var pool = allParts();
+  var pair = null;
+  for (var i = 0; i < pool.length && !pair; i++) {
+    for (var j = i; j < pool.length; j++) {
+      if (i === j) continue;
+      if (!W().ZZSH.findRecipe(pool[i], pool[j])) { pair = [pool[i], pool[j]]; break; }
+    }
+  }
+  if (!pair) return false;
+  await merge(pair[0], pair[1], 600);
+  return true;
+}
+
+/* ============================================================ */
+frame.addEventListener("load", function () { run().catch(function (e) {
+  stat("套件崩溃：" + (e && e.message));
+  window.__SUITE__ = { stat: "套件崩溃：" + (e && e.message), cases: CASES, fail: CASES.filter(function (c) { return c.ok !== true && c.ok !== "skip"; }).length };
+  document.title = "SUITE-DONE";
+}); });
+
+async function waitGame() {
+  for (var i = 0; i < 80; i++) {
+    var okk = !!(W().ZZSH && W().ZZSH.ui && DD().getElementById("btn-start"));
+    if (okk) break;
+    await sleep(200);
+  }
+  W().ZZSH.ui.showScreen("#screen-game");
+  await sleep(300);
+}
+
+async function run() {
+  var Z = W().ZZSH, D;
+  await waitGame();
+  Z = W().ZZSH; D = Z.DATA;
+  var ALL = Object.keys(D.chars);
+
+  /* 异常监听，越早越好 */
+  W().__SUITE_ERRS = [];
+  W().addEventListener("error", function (e) { W().__SUITE_ERRS.push(String(e.message)); });
+  W().addEventListener("unhandledrejection", function (e) { W().__SUITE_ERRS.push("reject:" + String(e.reason)); });
+
+  await groupE(ALL, D, Z);
+  await groupF(ALL, D, Z);
+  await groupG(ALL, D, Z);
+  await groupH(ALL, D, Z);
+  await groupI(ALL, D, Z);
+  await groupJ(ALL, D, Z);
+  await groupK(ALL, D, Z);
+  await groupLiveE(ALL, D, Z);
+  await groupN(ALL, D, Z);
+  await groupL(ALL, D, Z);
+
+  var bad = CASES.filter(function (c) { return !c.note && c.ok !== true && c.ok !== "skip"; });
+  var skipped = CASES.filter(function (c) { return c.ok === "skip"; });
+  var s = "完成 " + CASES.filter(function (c) { return !c.note; }).length + " 条，失败 " + bad.length +
+    "，跳过 " + skipped.length;
+  stat(s);
+  window.__SUITE__ = { stat: s, cases: CASES, fail: bad.length, skip: skipped.length };
+  document.title = "SUITE-DONE";
+}
+
+/* ============================================================ */
+/* E · 玩法四层：目标条（纯渲染部分）                            */
+/* ============================================================ */
+async function groupE(ALL, D, Z) {
+  note("E · 玩法四层：下一个目标条");
+  loadSave([]);
+  var el = DD().getElementById("next-goal");
+  var txt = DD().getElementById("ng-text");
+  var dot = DD().getElementById("ng-dot");
+  rec("E1", "目标条开局可见", el && el.hidden === false, el && el.hidden);
+  rec("E1", "目标条指名主线 + 拿哪个去碰", /拿/.test(txt.innerText) && /去碰碰看/.test(txt.innerText), txt.innerText);
+  rec("E1", "目标条带主线色点", !!dot && W().getComputedStyle(dot).backgroundColor !== "rgba(0, 0, 0, 0)",
+      dot && W().getComputedStyle(dot).backgroundColor);
+
+  var lastC = ALL[ALL.length - 1];
+  loadSave(ALL.filter(function (c) { return c !== lastC; }));
+  rec("E2", "只剩 1 字 →「就差最后一个」", /就差最后一个/.test(DD().getElementById("ng-text").innerText),
+      DD().getElementById("ng-text").innerText);
+  var lineOfLast = D.lines[D.chars[lastC].line].name;
+  rec("E2", "文案点明是哪条主线", DD().getElementById("ng-text").innerText.indexOf(lineOfLast) >= 0, lineOfLast);
+
+  loadSave(ALL);
+  rec("E3", "集满 →「图鉴集满了」", /图鉴集满了/.test(DD().getElementById("ng-text").innerText),
+      DD().getElementById("ng-text").innerText);
+  rec("E3", "集满后隐藏「看图鉴」按钮", DD().getElementById("ng-jump").hidden === true);
+}
+
+/* ============================================================ */
+/* F · 图鉴格子墙                                                */
+/* ============================================================ */
+async function groupF(ALL, D, Z) {
+  note("F · 图鉴 · 格子墙");
+  var mid = ALL.slice(0, 30);
+  loadSave(mid);
+  DD().getElementById("btn-codex").click();
+  await sleep(150);
+
+  var secs = $$(".codex-line");
+  var order = Z.engine.lineOrder();
+  rec("F1", "渲染 10 个主线分区", secs.length === order.length, secs.length + "/" + order.length);
+  var nameOK = secs.every(function (s, i) {
+    return s.querySelector(".codex-line-head b").textContent.indexOf(D.lines[order[i]].name) >= 0;
+  });
+  rec("F1", "分区顺序与 lines.order 一致", nameOK);
+
+  var countBad = [], totalCells = 0, seen = {};
+  secs.forEach(function (s, i) {
+    var cells = [].slice.call(s.querySelectorAll(".codex-cell"));
+    var head = s.querySelector(".codex-line-head span:last-child").textContent.trim();
+    var gotHere = cells.filter(function (c) { return c.classList.contains("locked") === false; }).length;
+    if (head !== gotHere + "/" + cells.length) countBad.push(D.lines[order[i]].name + ":" + head + "≠" + gotHere + "/" + cells.length);
+    totalCells += cells.length;
+    cells.forEach(function (c) { seen[c.textContent.replace(/\s|画|\?/g, "")] = true; });
+  });
+  rec("F2", "分区计数与实际格子一致", countBad.length === 0, countBad.join("；"));
+  rec("F3", "格子总数 = 166", totalCells === ALL.length, totalCells + "/" + ALL.length);
+
+  /* F4/F6 未得格 */
+  var lockedCell = secs[0].querySelector(".codex-cell.locked");
+  rec("F4", "未得格含 locked 类", !!lockedCell);
+  rec("F4", "未得格文本为「?」", !!lockedCell && lockedCell.textContent.indexOf("?") >= 0,
+      lockedCell && JSON.stringify(lockedCell.textContent));
+  rec("F4", "未得格显示笔画数", !!lockedCell && /\d+\s*画/.test(lockedCell.textContent),
+      lockedCell && lockedCell.textContent);
+  rec("F4", "未得格 aria-label=还没发现", !!lockedCell && lockedCell.getAttribute("aria-label") === "还没发现",
+      lockedCell && lockedCell.getAttribute("aria-label"));
+
+  await drainToast();
+  DD().querySelector("#cardcol").innerHTML = "";
+  if (lockedCell) lockedCell.click();
+  var gotToastF6 = await waitToast(/还没发现/);
+  rec("F6", "点未得格只给 toast", gotToastF6 && !DD().querySelector("#cardcol .char-card"),
+      toastText());
+
+  /* F5/F7 已得格 */
+  var gotCell = null;
+  secs.forEach(function (s) {
+    if (gotCell) return;
+    var c = [].slice.call(s.querySelectorAll(".codex-cell")).filter(function (x) { return !x.classList.contains("locked"); })[0];
+    if (c) gotCell = c;
+  });
+  rec("F5", "已得格显示真字", !!gotCell && gotCell.textContent.trim().length === 1 && gotCell.textContent.indexOf("?") < 0,
+      gotCell && gotCell.textContent);
+  gotCell.click();
+  await sleep(250);
+  var card = DD().querySelector("#cardcol .char-card");
+  rec("F7", "点已得格弹出字源卡且字正确",
+      !!card && card.querySelector(".cc-char").textContent.trim() === gotCell.textContent.trim(),
+      card && card.querySelector(".cc-char").textContent);
+
+  /* F8 真实合成后图鉴更新 */
+  loadSave(ALL.filter(function (c) { return c !== "明"; }));
+  DD().getElementById("btn-codex").click();
+  await sleep(120);
+  var lockedBefore = $$(".codex-cell.locked").length;
+  var totalBefore = $$(".codex-cell").length;
+  /* 回到游戏，真实拖一次合成「明」 */
+  Z.ui.showScreen("#screen-game");
+  await sleep(200);
+  await merge("日", "月");
+  DD().getElementById("btn-codex").click();
+  await sleep(200);
+  var mingCell = null;
+  $$(".codex-cell").forEach(function (c) { if (c.textContent.trim() === "明") mingCell = c; });
+  rec("F8", "合成后「明」格从未得变已得", !!mingCell && !mingCell.classList.contains("locked"),
+      mingCell ? mingCell.className : "找不到「明」格");
+  var lockedAfter = $$(".codex-cell.locked").length;
+  rec("F8", "锁定数恰好 -1，其余格子不抖动",
+      lockedAfter === lockedBefore - 1 && $$(".codex-cell").length === totalBefore,
+      lockedBefore + " → " + lockedAfter + "，格数 " + $$(".codex-cell").length);
+}
+
+/* ============================================================ */
+/* G · 图鉴字族树                                                */
+/* ============================================================ */
+async function groupG(ALL, D, Z) {
+  note("G · 图鉴 · 字族树");
+  var mid = ALL.slice(0, 40);
+  loadSave(mid);
+  DD().getElementById("btn-codex").click();
+  await sleep(120);
+  DD().getElementById("tab-tree").click();
+  await sleep(300);
+
+  var boxes = $$(".fam-box").filter(function (b) { return !b.classList.contains("fam-mini"); });
+  var mini = DD().querySelector(".fam-box.fam-mini");
+  var chips = mini ? [].slice.call(mini.querySelectorAll(".mini-fam")) : [];
+  rec("G1", "渲染 10 棵族树", boxes.length === 10, boxes.length);
+  rec("G1", "小族区 4 枚徽章", chips.length === 4, chips.length);
+
+  /* G2 覆盖范围必须用满档：未收集的节点画的是「?」，读不出是哪个字。
+     所以这里换成全收集档再渲染一次树，逐字核对 166 字是否都挂在树上。 */
+  loadSave(ALL);
+  DD().getElementById("btn-codex").click();
+  await sleep(120);
+  DD().getElementById("tab-tree").click();
+  await sleep(300);
+  var seen = {};
+  $$(".fam-node-g .glyph").forEach(function (t) { var s = t.textContent.trim(); if (s && s !== "?") seen[s] = true; });
+  $$(".mini-node").forEach(function (t) { var s = t.textContent.trim(); if (s && s !== "?" && s !== "›") seen[s] = true; });
+  var missingNode = ALL.filter(function (c) { return !seen[c]; });
+  rec("G2", "166 字在树上全覆盖（含徽章）", missingNode.length === 0, missingNode.join("、"));
+
+  /* 换回中档渲染，才好验证「计数 / 锁定态 / 点击行为」 */
+  loadSave(mid);
+  DD().getElementById("btn-codex").click();
+  await sleep(120);
+  DD().getElementById("tab-tree").click();
+  await sleep(300);
+
+  var countBad = [];
+  $$(".fam-box").filter(function (b) { return !b.classList.contains("fam-mini"); }).forEach(function (b) {
+    var cnt = b.querySelector(".fam-count");
+    var nodes = [].slice.call(b.querySelectorAll(".fam-node-g"));
+    var charNodes = nodes.filter(function (g) { return !g.classList.contains("part"); });
+    var litNodes = charNodes.filter(function (g) {
+      return !g.classList.contains("locked") && g.querySelector(".glyph").textContent.trim() !== "?";
+    }).length;
+    var name = (b.querySelector(".fam-name") || { textContent: "?" }).textContent;
+    if (!cnt) { countBad.push(name + ":缺计数"); return; }
+    if (cnt.textContent.trim() !== litNodes + "/" + charNodes.length) {
+      countBad.push(name + ":" + cnt.textContent + " vs " + litNodes + "/" + charNodes.length);
+    }
+  });
+  /* 小族每枚徽章各有一份计数，必须逐个比，不能拿第一份当整区 */
+  [].slice.call(DD().querySelectorAll(".mini-fam")).forEach(function (chip) {
+    var cnt = chip.querySelector(".mini-count");
+    var dots = [].slice.call(chip.querySelectorAll(".mini-node")).filter(function (n) { return !n.classList.contains("is-part"); });
+    var lit = dots.filter(function (n) { return !n.classList.contains("locked"); }).length;
+    var name = (chip.querySelector(".mini-fam-name") || { textContent: "?" }).textContent;
+    if (!cnt || cnt.textContent.trim() !== lit + "/" + dots.length) {
+      countBad.push(name + ":" + (cnt ? cnt.textContent : "无") + " vs " + lit + "/" + dots.length);
+    }
+  });
+  rec("G3", "族头计数与实际点亮数一致", countBad.length === 0, countBad.join("；"));
+
+  var lockNode = DD().querySelector(".fam-node-g.locked");
+  rec("G4", "未得节点显示「?」+ 笔画数",
+      !!lockNode && lockNode.querySelector(".glyph").textContent.trim() === "?" &&
+      /\d+画/.test(lockNode.textContent), lockNode && lockNode.textContent.trim());
+  var litNode = null;
+  [].slice.call(DD().querySelectorAll(".fam-node-g")).forEach(function (g) {
+    if (!litNode && !g.classList.contains("locked") && g.querySelector(".glyph").textContent.trim() !== "?" &&
+        W().ZZSH.DATA.chars[g.querySelector(".glyph").textContent.trim()]) litNode = g;
+  });
+  rec("G4", "已得节点显示真字", !!litNode, litNode && litNode.querySelector(".glyph").textContent);
+
+  await drainToast();
+  DD().querySelector("#cardcol").innerHTML = "";
+  lockNode.dispatchEvent(new (W().MouseEvent)("click", { bubbles: true }));
+  var gotToastG5 = await waitToast(/还没发现/, 15000);
+  rec("G5", "点未得节点 → toast 不弹卡",
+      gotToastG5 && !DD().querySelector("#cardcol .char-card"),
+      JSON.stringify({ toast: toastText().slice(0, 40), card: !!DD().querySelector("#cardcol .char-card") }));
+  DD().querySelector("#cardcol").innerHTML = "";
+  litNode.dispatchEvent(new (W().MouseEvent)("click", { bubbles: true }));
+  await sleep(200);
+  var card = DD().querySelector("#cardcol .char-card");
+  rec("G5", "点已得节点 → 字源卡", !!card && card.querySelector(".cc-char").textContent.trim() === litNode.querySelector(".glyph").textContent.trim());
+
+  /* G6 树不同步回归：tab 停在树上，回游戏合成新字，再从📖进图鉴 */
+  loadSave(ALL.filter(function (c) { return c !== "明"; }));
+  DD().getElementById("tab-tree").click();
+  await sleep(250);
+  Z.ui.showScreen("#screen-game");
+  await sleep(200);
+  await merge("日", "月");
+  DD().getElementById("btn-codex").click();
+  await sleep(300);
+  var ming = null;
+  [].slice.call(DD().querySelectorAll(".fam-node-g")).forEach(function (g) {
+    if (g.querySelector(".glyph").textContent.trim() === "明") ming = g;
+  });
+  rec("G6", "tab 停在树上重开图鉴，新字已点亮", !!ming && !ming.classList.contains("locked"),
+      ming ? ming.getAttribute("class") : "找不到节点");
+  DD().getElementById("tab-wall").click();
+}
+
+/* ============================================================ */
+/* H · 字源卡与笔顺                                              */
+/* ============================================================ */
+async function groupH(ALL, D, Z) {
+  note("H · 字源卡与笔顺");
+  Z.ui.showScreen("#screen-game");
+  loadSave(ALL);
+  await sleep(150);
+
+  var probe = ["明", "休", "困", "湖"];
+  var bad = [];
+  probe.forEach(function (c) {
+    DD().querySelector("#cardcol").innerHTML = "";
+    Z.ui.showCard(c);
+    var card = DD().querySelector("#cardcol .char-card");
+    if (!card) { bad.push(c + ":无卡片"); return; }
+    var okNow = card.querySelector(".cc-char") && card.querySelector(".cc-char").textContent.trim() === c &&
+      card.querySelector(".cc-recipe") && card.querySelector(".cc-origin") && card.querySelector(".cc-fun") &&
+      (card.querySelector(".cc-words") || card.querySelector(".cc-note"));
+    if (!okNow) bad.push(c + ":结构不全");
+  });
+  rec("H1", "字源卡结构完整（字/配方/本义/趣解/组词或备注）", bad.length === 0, bad.join("；"));
+
+  /* H2 出处标识 */
+  var withSrc = ALL.filter(function (c) { return !!D.chars[c].originSource; });
+  var noSrc = ALL.filter(function (c) { return !D.chars[c].originSource && !!D.chars[c].origin; });
+  DD().querySelector("#cardcol").innerHTML = "";
+  Z.ui.showCard(withSrc[0]);
+  var hasDiv = !!DD().querySelector("#cardcol .cc-source");
+  DD().querySelector("#cardcol").innerHTML = "";
+  Z.ui.showCard(noSrc[0]);
+  var noDiv = !DD().querySelector("#cardcol .cc-source");
+  rec("H2", "有出处才渲染「本义出处」行", hasDiv, withSrc[0]);
+  rec("H2", "无出处不渲染空标签", noDiv, noSrc[0]);
+
+  /* H3 有数据 → 画出笔顺 */
+  DD().querySelector("#cardcol").innerHTML = "";
+  Z.ui.showCard("明");
+  var btn = DD().querySelector("#cardcol .cc-stroke-btn");
+  rec("H3", "有笔顺数据的字给出「看笔顺」按钮", !!btn, !!btn);
+  if (btn) {
+    btn.click();
+    var drew = false, tries = 0;
+    while (tries++ < 150) {
+      var box = DD().querySelector("#cardcol .cc-stroke-box");
+      if (box) {
+        var svg = box.querySelector("svg");
+        if (svg && svg.querySelectorAll("path").length > 0) { drew = true; break; }
+        if (/暂时取不到|暂无笔顺数据/.test(box.textContent)) break;
+      }
+      await sleep(80);
+    }
+    rec("H3", "点击后真的画出笔顺 path", drew, drew ? "" : DD().querySelector("#cardcol .cc-stroke-box").textContent.slice(0, 60));
+  }
+
+  /* H4 无数据 → 明示 */
+  var noHw = ALL.filter(function (c) { return c === "燚" || c === "沝"; });
+  DD().querySelector("#cardcol").innerHTML = "";
+  Z.ui.showCard(noHw[0]);
+  var none = DD().querySelector("#cardcol .cc-stroke-none");
+  var btn2 = DD().querySelector("#cardcol .cc-stroke-btn");
+  rec("H4", "无笔顺数据的字明示「暂无笔顺数据」",
+      !!none && /暂无笔顺数据/.test(none.textContent), none ? none.textContent : JSON.stringify({ btn: !!btn2 }));
+  rec("H4", "无数据时不给点不出东西的按钮", !btn2, !!btn2 ? "仍渲染了按钮" : "");
+
+  /* H5 关闭 */
+  var closeBtn = DD().querySelector("#cardcol [data-close]");
+  if (closeBtn) closeBtn.click();
+  await sleep(120);
+  rec("H5", "点关闭按钮移除卡片", !DD().querySelector("#cardcol .char-card"));
+}
+
+/* ============================================================ */
+/* I · 多解选择面板                                              */
+/* ============================================================ */
+async function groupI(ALL, D, Z) {
+  note("I · 多解选择面板");
+  var multi = null;
+  D.recipes.forEach(function (r) { if (!multi && r.results.length > 1) multi = r; });
+  var resList = multi.results;
+  var partsAll = allParts();
+
+  /* 逐个候选：都拿到正确结果 */
+  var bad = [];
+  for (var i = 0; i < resList.length; i++) {
+    loadSave([], partsAll);
+    Z.ui.showScreen("#screen-game");
+    await sleep(120);
+    var mv = await merge(multi.a, multi.b, 500);
+    if (mv !== true) { bad.push("第" + i + "次拖不出：" + mv); break; }
+    var items = [].slice.call(DD().querySelectorAll("#choose-items .choose-item"));
+    if (items.length !== resList.length) { bad.push("候选数 " + items.length + "≠" + resList.length); break; }
+    if (!items[i]) break;
+    items[i].click();
+    await sleep(600);
+    if (got().indexOf(resList[i]) < 0) bad.push("选第" + i + "项没得到「" + resList[i] + "」");
+  }
+  rec("I2", "每个候选都能被正确选出", bad.length === 0, bad.join("；"));
+
+  /* I1 面板不泄底 */
+  loadSave([], partsAll);
+  Z.ui.showScreen("#screen-game");
+  await sleep(120);
+  await merge(multi.a, multi.b, 500);
+  rec("I1", "多解触发弹面板", !DD().getElementById("choose-mask").classList.contains("hidden"));
+  rec("I1", "面板标题是摆法提示而非报答案",
+      /摆的位置不一样/.test(DD().querySelector(".choose-title").textContent) &&
+      /挑一种摆法/.test(DD().getElementById("choose-hint").textContent));
+  var leak = [];
+  [].slice.call(DD().querySelectorAll("#choose-items .choose-item")).forEach(function (it) {
+    resList.forEach(function (c) { if (it.textContent.indexOf(c) >= 0) leak.push(c); });
+  });
+  rec("I1", "候选项不出现结果字（不泄底）", leak.length === 0, leak.join("、"));
+
+  /* I3 取消 */
+  var before = got().length;
+  DD().getElementById("btn-choose-cancel").click();
+  await sleep(200);
+  rec("I3", "取消后面板关闭", DD().getElementById("choose-mask").classList.contains("hidden"));
+  rec("I3", "取消不收录任何字", got().length === before, got().length + " vs " + before);
+  rec("I3", "取消后两个字块仍在画布上", W().ZZSH.board.count() >= 2, W().ZZSH.board.count());
+
+  /* I2 已收录候选标 .got */
+  loadSave([resList[0]], partsAll);
+  Z.ui.showScreen("#screen-game");
+  await sleep(120);
+  await merge(multi.a, multi.b, 500);
+  var first = DD().querySelector("#choose-items .choose-item");
+  rec("I2", "已收录的候选标 .got", !!first && first.classList.contains("got"), first && first.className);
+  DD().getElementById("btn-choose-cancel").click();
+}
+
+/* ============================================================ */
+/* J · 设置 / 存档码 / 云引导                                    */
+/* ============================================================ */
+async function groupJ(ALL, D, Z) {
+  note("J · 设置 / 存档码 / 云引导");
+  var mid = ALL.slice(0, 25);
+  loadSave(mid);
+  Z.ui.showScreen("#screen-game");
+
+  /* J1 导出 → 导入 往返（覆盖导出 / 导入按钮的真实接线，不只是两个函数对拷） */
+  var captured = null;
+  W().prompt = function (msg, def) { captured = def; return def; };
+  DD().getElementById("btn-settings").click();
+  await sleep(120);
+  DD().getElementById("btn-export-save").click();
+  await sleep(200);
+  rec("J1", "导出按钮给出存档码", !!captured, captured ? captured.slice(0, 24) + "…" : "没拿到");
+  var exported = captured;
+  loadSave([]);
+  Z.ui.showScreen("#screen-game");
+  DD().getElementById("btn-settings").click();
+  W().prompt = function () { return exported; };
+  DD().getElementById("btn-import-save").click();
+  await sleep(300);
+  var imported = W().ZZSH.state.data.got.slice().sort().join("");
+  var expected = mid.slice().sort().join("");
+  rec("J1", "导入后 got 与导出时完全一致", imported === expected,
+      imported.length + " 字 vs " + expected.length + " 字");
+
+  /* J2 设置开关写回 */
+  var snd = DD().getElementById("set-sound");
+  var before = W().ZZSH.state.data.settings.sound;
+  snd.checked = !before;
+  snd.dispatchEvent(new (W().Event)("change", { bubbles: true }));
+  await sleep(100);
+  rec("J2", "音效开关写回存档", W().ZZSH.state.data.settings.sound === !before,
+      W().ZZSH.state.data.settings.sound + " vs " + !before);
+  var stk = DD().getElementById("set-stroke");
+  stk.checked = false;
+  stk.dispatchEvent(new (W().Event)("change", { bubbles: true }));
+  await sleep(100);
+  rec("J2", "笔顺开关写回存档", W().ZZSH.state.data.settings.strokeAnim === false);
+
+  /* J3 云区域三态与真实状态一致 */
+  var status = W().ZZSH.cloud.getStatus();
+  var box = DD().getElementById("cloud-status").textContent;
+  var btnTxt = DD().getElementById("btn-cloud").textContent;
+  var okJ3 = status === "signed_in"
+    ? /同步|登录/.test(box) && /已登录/.test(btnTxt)
+    : status === "offline"
+      ? /联网/.test(box)
+      : /登录|同步/.test(box);
+  rec("J3", "云区域文案与 getStatus(" + status + ") 一致", okJ3, box.slice(0, 60));
+
+  /* J4 引导式登录条 */
+  if (status === "signed_out") {
+    loadSave(mid);
+    W().localStorage.removeItem("zzsh_cloud_hint_dismissed_ts");
+    Z.ui.showScreen("#screen-game");
+    DD().getElementById("btn-settings").click();
+    await sleep(120);
+    var banner = DD().getElementById("cloud-hint-banner");
+    rec("J4", "未登录且未 dismiss → 引导条可见", !banner.classList.contains("hidden"),
+        banner.className);
+    DD().getElementById("chb-later").click();
+    await sleep(120);
+    rec("J4", "点「暂不」→ 引导条隐藏", banner.classList.contains("hidden"));
+    rec("J4", "记录 dismiss 时间戳", !!W().localStorage.getItem("zzsh_cloud_hint_dismissed_ts"));
+    Z.ui.showScreen("#screen-settings");
+    await sleep(150);
+    rec("J4", "7 天内不再弹出", banner.classList.contains("hidden"));
+  } else {
+    rec("J4", "引导式登录条（云端状态 " + status + "，无法判定）", "skip", status);
+  }
+
+  /* J5 登录弹窗开关 */
+  DD().getElementById("btn-cloud").click();
+  await sleep(150);
+  rec("J5", "点云端按钮弹出登录框", !DD().getElementById("login-mask").classList.contains("hidden"));
+  rec("J5", "手机号输入框已清空", DD().getElementById("login-phone").value === "");
+  DD().getElementById("btn-login-cancel").click();
+  await sleep(120);
+  rec("J5", "取消后关闭登录框", DD().getElementById("login-mask").classList.contains("hidden"));
+}
+
+/* ============================================================ */
+/* K · 响应式与移动端                                            */
+/* ============================================================ */
+async function groupK(ALL, D, Z) {
+  note("K · 响应式与移动端（375×667）");
+  frame.style.width = "375px";
+  frame.style.height = "667px";
+  await sleep(400);
+
+  loadSave(ALL.slice(0, 20));
+  Z.ui.showScreen("#screen-game");
+  await sleep(300);
+  var ng = DD().getElementById("next-goal");
+  rec("K1", "窄屏目标条不横向溢出",
+      ng.scrollWidth <= ng.clientWidth + 2, ng.scrollWidth + " vs " + ng.clientWidth);
+
+  DD().getElementById("btn-codex").click();
+  await sleep(200);
+  var cell = DD().querySelector(".codex-cell");
+  var r = cell.getBoundingClientRect();
+  rec("K2", "图鉴格子 ≥44px 可点", r.width >= 44 && r.height >= 44, Math.round(r.width) + "×" + Math.round(r.height));
+  var cnt = cell.querySelector(".stroke-count");
+  rec("K2", "笔画数不溢出格子", !cnt || cnt.scrollHeight <= cell.clientHeight + 2,
+      cnt ? cnt.scrollHeight + " vs " + cell.clientHeight : "无");
+
+  var gotCell = [].slice.call(DD().querySelectorAll(".codex-cell")).filter(function (c) { return !c.classList.contains("locked"); })[0];
+  gotCell.click();
+  await sleep(250);
+  var drawer = DD().getElementById("card-drawer");
+  rec("K3", "窄屏点已得格走底部抽屉", !drawer.classList.contains("hidden"),
+      "cardcol display=" + W().getComputedStyle(DD().getElementById("cardcol")).display);
+  rec("K3", "抽屉内确实渲染了卡片", !!DD().querySelector("#card-drawer-inner .char-card"));
+
+  loadSave([]);
+  Z.ui.showScreen("#screen-game");
+  await sleep(250);
+  var mv = await merge("日", "月", 900);
+  rec("K4", "窄屏拖拽合成可用", mv === true && got().length === 1, mv + " got=" + got().length);
+
+  frame.style.width = "1280px";
+  frame.style.height = "820px";
+  await sleep(400);
+}
+
+/* ============================================================ */
+/* E · 玩法四层：里程碑 / 连击 / 灵感 / 集满（真实合成）          */
+/* ============================================================ */
+async function groupLiveE(ALL, D, Z) {
+  note("E · 玩法四层：里程碑 / 连击 / 灵感 / 集满（真实合成）");
+  loadSave([]);
+  await failOnce(D);            // 连击归零，隔离上一组遗留状态
+
+  /* E4 里程碑 + E7 灵感 */
+  loadSave(["昌", "晶", "旦", "杲", "杳", "朋", "早", "是", "亘"]);
+  Z.ui.showScreen("#screen-game");
+  await sleep(200);
+  clearFloats();
+  DD().getElementById("toast").textContent = "";
+  await merge("日", "月", 900);
+  rec("E4", "合成第 10 字 → 里程碑飘字", floats().some(function (s) { return /milestone/.test(s) && /已集 10 字/.test(s); }),
+      floats().join(" / "));
+  /* 灵感 toast 排在解锁/成就播报之后（toast 队列），队列最多 4×3.4s，给足 15s */
+  var gotClue = await waitToast(/灵感/, 15000);
+  rec("E7", "跨整十给出灵感线索", gotClue, toastText().slice(0, 80));
+  rec("E7", "灵感线索带主线与笔画数", /画/.test(toastText()) && /·/.test(toastText()), toastText().slice(0, 80));
+
+  /* E5 连击 */
+  loadSave([]);
+  await failOnce(D);
+  Z.ui.showScreen("#screen-game");
+  await sleep(200);
+  await drainToast();
+  await merge("日", "月", 800);
+  await merge("木", "木", 800);
+  clearFloats();
+  await merge("人", "人", 900);
+  rec("E5", "连续 3 次新发现 →「连中 3」",
+      floats().some(function (s) { return /combo/.test(s) && /连中 3/.test(s); }), floats().join(" / "));
+
+  /* E6 失败一次连击归零 */
+  await merge("日", "水", 700);          // 无配方 → 失败
+  await sleep(200);
+  clearFloats();
+  await merge("口", "木", 500);          // 多解面板：取消，不收录
+  if (!DD().getElementById("choose-mask").classList.contains("hidden")) {
+    DD().getElementById("btn-choose-cancel").click();
+  }
+  await sleep(200);
+  rec("E6", "失败尝试后不误报连击", !floats().some(function (s) { return /combo/.test(s); }), floats().join(" / "));
+
+  /* E8 主线集满播报 */
+  loadSave(ALL.filter(function (c) { return D.chars[c].line === "riyue" && c !== "明"; }));
+  Z.ui.showScreen("#screen-game");
+  await sleep(200);
+  DD().getElementById("toast").textContent = "";
+  await merge("日", "月", 1000);
+  var t = toastText();
+  for (var j = 0; j < 20; j++) {
+    t = toastText();
+    if (/集满/.test(t)) break;
+    await sleep(250);
+  }
+  rec("E8", "主线集满 → 金色播报", /集满/.test(t), t.slice(0, 80));
+}
+
+/* ============================================================ */
+/* N · 新手引导与分栏调节                                        */
+/* ============================================================ */
+async function groupN(ALL, D, Z) {
+  note("N · 新手引导与分栏调节");
+  var mask = DD().getElementById("guide-mask");
+  var bubble = DD().getElementById("guide-bubble");
+
+  /* 回到封面，走真实的「开始」按钮（引导只在首次开始时<｜hy_place▁holder▁no▁813｜>） */
+  Z.state.data.guide = { done: false, step: 0 };
+  Z.state.data.got = [];
+  Z.state.save();
+  Z.ui.showScreen("#screen-cover");
+  await sleep(200);
+  DD().getElementById("btn-start").click();
+  await sleep(700);
+  rec("N1", "首次点「开始」自动播引导",
+      !mask.classList.contains("hidden") && bubble.textContent.trim().length > 0,
+      bubble.textContent.trim().slice(0, 24));
+
+  DD().getElementById("guide-skip").click();
+  await sleep(250);
+  rec("N2", "点「跳过引导」收起遮罩", mask.classList.contains("hidden"));
+  rec("N2", "引导完成写回存档", Z.state.data.guide.done === true, JSON.stringify(Z.state.data.guide));
+
+  /* N3 设置页「播放」重看 */
+  Z.ui.showScreen("#screen-settings");
+  await sleep(150);
+  DD().getElementById("btn-replay-guide").click();
+  var shown = false;
+  for (var i = 0; i < 25; i++) {
+    if (!mask.classList.contains("hidden")) { shown = true; break; }
+    await sleep(160);
+  }
+  rec("N3", "设置页「重看新手引导」能再次播放", shown);
+  DD().getElementById("guide-skip").click();
+  await sleep(200);
+
+  /* N4 分栏调节：键盘微调比拖 summé 稳定得多，同一套 setWidth 逻辑 */
+  Z.ui.showScreen("#screen-game");
+  await sleep(250);
+  var invW = function () {
+    return parseFloat(W().getComputedStyle(DD().documentElement).getPropertyValue("--inv-w"));
+  };
+  var rz = DD().getElementById("rz-inv");
+  var kev = function (key, shift) {
+    rz.dispatchEvent(new (W().KeyboardEvent)("keydown", { key: key, shiftKey: !!shift, bubbles: true }));
+  };
+  /* 每次都从 Home 出发量一格的步长：贴近上下限时会被引擎夹住，
+     直接比较两次相减会把「夹住」误判成「步长不对」 */
+  kev("Home"); await sleep(150);
+  var invBase = invW();
+  kev("ArrowRight"); await sleep(150);
+  var invSmall = invW();
+  rec("N4", "键盘 → 加宽库存区（步长 16）", invSmall - invBase === 16, invBase + " → " + invSmall);
+  kev("Home"); await sleep(150);
+  kev("ArrowRight", true); await sleep(150);
+  var invBig = invW();
+  rec("N4", "Shift+→ 加大步长（步长 40）", invBig - invBase === 40, invBase + " → " + invBig);
+  kev("Home");
+  await sleep(150);
+  rec("N4", "Home 复位到默认宽度", invW() === 240, String(invW()));
+  rz.dispatchEvent(new (W().MouseEvent)("dblclick", { bubbles: true }));
+  await sleep(150);
+  rec("N4", "双击复位不报错且宽度合法",
+      parseFloat(W().getComputedStyle(DD().documentElement).getPropertyValue("--inv-w")) >= 164);
+}
+
+/* ============================================================ */
+/* L · 健壮性                                                    */
+/* ============================================================ */
+async function groupL(ALL, D, Z) {
+  note("L · 健壮性");
+  loadSave(ALL.slice(0, 12));
+  Z.ui.showScreen("#screen-game");
+  await sleep(200);
+  var mats = ["日", "月", "木", "人", "口", "一", "水", "火", "十", "心", "力"];
+  var errBefore = (W().__SUITE_ERRS || []).length;
+  for (var i = 0; i < 20; i++) {
+    var a = mats[Math.floor(Math.random() * mats.length)];
+    var b = mats[Math.floor(Math.random() * mats.length)];
+    var p1 = boardPt(0.2 + Math.random() * 0.2, 0.25 + Math.random() * 0.5);
+    dragTo(a, p1.x, p1.y);
+    await sleep(90);
+    var c1 = centerOf(a);
+    if (!c1) continue;
+    var p2 = boardPt(0.6 + Math.random() * 0.2, 0.25 + Math.random() * 0.5);
+    dragTo(b, p2.x, p2.y);
+    await sleep(420);
+    if (!DD().getElementById("choose-mask").classList.contains("hidden")) {
+      DD().getElementById("btn-choose-cancel").click();
+      await sleep(150);
+    }
+    Z.board.clearBoard();
+    await sleep(60);
+  }
+  var g = got();
+  rec("L2", "20 次随机合成后 got 无重复", new Set(g).size === g.length, g.length + " 字");
+  rec("L2", "收集数不越界", g.length > 0 && g.length <= ALL.length, g.length);
+  rec("L2", "随机操作不产生 JS 异常", (W().__SUITE_ERRS || []).length === errBefore,
+      (W().__SUITE_ERRS || []).slice(errBefore).join(" | "));
+
+  Z.ui.showScreen("#screen-settings");
+  await sleep(120);
+  DD().getElementById("btn-about").click();
+  await sleep(150);
+  var v = DD().getElementById("about-version").textContent;
+  rec("L3", "关于页版本号 = meta.release", v === "v" + D.meta.release, v + " vs v" + D.meta.release);
+
+  Z.ui.showScreen("#screen-game");
+  await sleep(100);
+  var st = W().ZZSH.cloud.getStatus();
+  if (st === "offline") {
+    rec("L4", "云端离线时图鉴仍可用", true);
+  }
+  DD().getElementById("btn-codex").click();
+  await sleep(200);
+  rec("L4", "云状态 " + st + " 下图鉴照常渲染", DD().querySelectorAll(".codex-cell").length === ALL.length);
+
+  await sleep(200);
+  rec("L1", "全流程 0 个未捕获 JS 异常", (W().__SUITE_ERRS || []).length === 0,
+      (W().__SUITE_ERRS || []).slice(0, 4).join(" | "));
+}
+</script>

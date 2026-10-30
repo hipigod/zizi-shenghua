@@ -19,4 +19,7 @@ tools/_hwdata/
 tools/_ids.txt
 tools/_audit_out.txt
 tools/fulltest_result.json
+tools/fulltest_result.md
+tools/suite_result.json
+tools/test_report.md
 tools/_shuowen/
