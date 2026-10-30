@@ -131,13 +131,18 @@
     particles = particles.filter(function (p) { return p.life > 0; });
     if (particles.length === 0) { rafRunning = false; return; }
     particles.forEach(function (p) {
+      if (p.life <= 0) return;
       p.x += p.vx; p.y += p.vy;
       p.vy += 0.12 * (window.devicePixelRatio || 1);
       p.life -= p.decay;
+      if (p.life <= 0) return;
       ctx.globalAlpha = Math.max(0, p.life);
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+      /* 半径必须夹到正数：life 在这一帧刚变负时 r*life 是负数，
+         canvas.arc 会抛 IndexSizeError，而抛在 rAF 里会连带打断整条
+         动画链——rafRunning 卡在 true，此后所有墨点特效都不再出现。 */
+      ctx.arc(p.x, p.y, Math.max(0.1, p.r * p.life), 0, Math.PI * 2);
       ctx.fill();
     });
     ctx.globalAlpha = 1;

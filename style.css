@@ -459,6 +459,39 @@ body.rz-dragging { user-select: none; }
   touch-action: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='104' viewBox='0 0 104 104'%3E%3Cpath d='M0 52H104M52 0V104M0 0L104 104M104 0L0 104' stroke='%23e3d8bd' stroke-width='0.75' fill='none' opacity='0.5'/%3E%3C/svg%3E");
 }
+/* ---------------- 下一个目标条（CD8 进度可见） ---------------- */
+.next-goal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 8px;
+  padding: 6px 10px;
+  background: #fffdf7;
+  border: 1px solid rgba(139, 124, 96, .22);
+  border-radius: 14px;
+  font-size: 13px;
+  color: #4a4436;
+  box-shadow: 0 1px 6px rgba(90, 78, 55, .05);
+}
+.next-goal[hidden] { display: none; }
+.ng-dot { width: 8px; height: 8px; border-radius: 50%; background: #8A7F63; flex: 0 0 auto; }
+.ng-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ng-text b { color: #2B2B2B; font-weight: 600; }
+.ng-text .ng-seed { color: var(--cinnabar); font-weight: 600; }
+.ng-jump {
+  flex: 0 0 auto;
+  border: 1px solid rgba(139, 124, 96, .28);
+  background: transparent;
+  color: #6b6455;
+  border-radius: 10px;
+  padding: 2px 9px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.ng-jump:hover { background: rgba(139, 124, 96, .08); }
+.ng-jump[hidden] { display: none; }
+
 .board-tools {
   position: absolute;
   bottom: 12px;
@@ -1488,4 +1521,25 @@ body.rz-dragging { user-select: none; }
   .cloud-hint-banner { bottom: 12px; flex-direction: column; align-items: stretch; gap: 8px; }
   .cloud-hint-banner .chb-text { text-align: center; }
   .cloud-hint-banner .chb-actions { justify-content: center; }
+}
+
+/* 移动端：目标条压字号、去掉跳转按钮（点图鉴图标一样能进） */
+@media (max-width: 560px) {
+  .next-goal { margin: 0 8px 6px; padding: 5px 8px; font-size: 12px; border-radius: 12px; align-items: flex-start; }
+  .next-goal .ng-text { white-space: normal; line-height: 1.45; }
+  .next-goal .ng-jump { display: none; }
+  .next-goal .ng-dot { margin-top: 5px; }
+}
+
+/* 连击与里程碑飘字：比普通飘字更轻，只做手感，不抢注意力 */
+.float-word.combo {
+  border-color: rgba(201, 162, 39, .55);
+  color: #8a6d1f;
+  font-size: 18px;
+  letter-spacing: 3px;
+}
+.float-word.milestone {
+  background: #fff8e3;
+  border-color: rgba(201, 162, 39, .45);
+  color: #6b5a25;
 }

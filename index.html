@@ -58,6 +58,12 @@
         <span class="partbar-label">部件</span>
         <div class="partbar-items" id="inv-parts"></div>
       </div>
+      <!-- 下一个目标条：只给「哪条线、还差几个、拿哪个部件去碰」，不给完整配方 -->
+      <div class="next-goal" id="next-goal" hidden>
+        <span class="ng-dot" id="ng-dot" aria-hidden="true"></span>
+        <span class="ng-text" id="ng-text"></span>
+        <button class="ng-jump" id="ng-jump" type="button">看图鉴</button>
+      </div>
       <div class="board" id="board" aria-label="合成画布"></div>
       <div class="board-tools">
         <button class="btn btn-ghost btn-sm" id="btn-tidy">整理画布</button>

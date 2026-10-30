@@ -22,15 +22,42 @@
     }
   }
 
-  /* ================= Toast ================= */
+  /* ================= Toast =================
+   * 队列化：成就、解锁、里程碑、灵感经常前后脚到，直接覆盖会让先到的那条
+   * 完全看不见（例如第 10 个字同时触发成就和灵感，灵感被成就盖掉）。
+   * 现在排队依次显示，单条时长按各自 long 决定。 */
   var toastTimer = null;
+  var toastQueue = [];
+  var toastBusy = false;
+
   function toast(text, opts) {
     opts = opts || {};
+    /* 同一条文案不重复排队（连点无效组合时容易刷屏），队列也不超过 4 条 */
+    var last = toastQueue[toastQueue.length - 1];
+    if (last && last.text === text) return;
+    if (toastBusy && $("#toast").textContent === text) return;
+    if (toastQueue.length >= 4) toastQueue.shift();
+    toastQueue.push({ text: text, opts: opts });
+    if (!toastBusy) nextToast();
+  }
+
+  function nextToast() {
+    var item = toastQueue.shift();
     var el = $("#toast");
-    el.textContent = text;
-    el.className = "toast show" + (opts.gold ? " achv-toast" : "");
+    if (!item) {
+      toastBusy = false;
+      el.className = "toast";
+      return;
+    }
+    toastBusy = true;
+    el.textContent = item.text;
+    el.className = "toast show" + (item.opts.gold ? " achv-toast" : "");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { el.className = "toast"; }, opts.long ? 3400 : 2200);
+    toastTimer = setTimeout(function () {
+      el.className = "toast";
+      /* 留一点间隔，两条连着弹会被看成一整句 */
+      setTimeout(nextToast, 220);
+    }, item.opts.long ? 3400 : 2200);
   }
 
   /* ================= 库存 ================= */
@@ -329,6 +356,80 @@
     return box;
   }
 
+  /* ================= 下一个目标条 =================
+   * 只回答「下一步该碰什么」：哪条线、还差几个、拿哪个部件去试。
+   * 不给整条配方，答案仍留给玩家自己拼（创造驱动）。 */
+  function renderNextGoal() {
+    var el = $("#next-goal");
+    if (!el) return;
+    var g = ZZSH.engine.nextGoal();
+    var txt = $("#ng-text"), dot = $("#ng-dot"), jump = $("#ng-jump");
+    if (g.kind === "done") {
+      txt.innerHTML = "<b>图鉴集满了</b>，166 个字全在你手里";
+      dot.style.background = "#C9A227";
+      jump.hidden = true;
+      el.hidden = false;
+      return;
+    }
+    if (g.kind === "stuck") {
+      txt.innerHTML = "手上这些字暂时碰不出新字了 —— 点 💡 让人给你讲讲还差什么";
+      dot.style.background = g.color || "#8A7F63";
+      jump.hidden = false;
+      el.hidden = false;
+      return;
+    }
+    var head = g.remain === 1
+      ? "<b>" + g.emoji + " " + g.name + "</b> 就差最后一个"
+      : "<b>" + g.emoji + " " + g.name + "</b> " + g.got + "/" + g.total + "，还差 " + g.remain + " 个";
+    txt.innerHTML = head + " · 拿 <span class=\"ng-seed\">「" + g.seed + "」</span> 去碰碰看";
+    dot.style.background = g.color || "#8A7F63";
+    jump.hidden = false;
+    el.hidden = false;
+  }
+
+  /* ================= 里程碑 / 连击 / 灵感 =================
+   * 连击只数「新发现」：连续发现新字算连中，出现一次失败尝试就归零。
+   * 不做倒计时、不播报断击——避免怕断连反而不敢试。 */
+  var comboCount = 0;
+
+  function onMergeFail() { comboCount = 0; }
+
+  function afterNewCharFeedback(res, screenX, screenY, beforeGot) {
+    var afterGot = ZZSH.state.data.got.length;
+
+    /* 连击：只显示正反馈 */
+    comboCount++;
+    if (comboCount >= 3) {
+      ZZSH.fx.floatWord(screenX, screenY - 70, "连中 " + comboCount, "combo");
+    }
+
+    /* 每条主线集满：金色播报（按主线色点区分，和成就 toast 分开时段） */
+    var info = D.chars[res.result];
+    var lt = ZZSH.engine.lineTotals(info.line);
+    if (lt.got === lt.total) {
+      var line = D.lines[info.line];
+      setTimeout(function () {
+        ZZSH.fx.sndChime();
+        toast(line.emoji + " " + line.name + " 集满 " + lt.total + "/" + lt.total + "！整条线都点亮了",
+              { long: true, gold: true });
+      }, 300);
+    }
+
+    /* 整十节拍 + 灵感线索（每 +10 个字触发一次） */
+    var crossed = Math.floor(afterGot / 10) > Math.floor(beforeGot / 10);
+    if (crossed && afterGot < ZZSH.engine.allChars().length) {
+      ZZSH.fx.floatWord(screenX, screenY - 30, "已集 " + afterGot + " 字", "milestone");
+      var clue = ZZSH.engine.randomClue([res.result]);
+      if (clue) {
+        setTimeout(function () {
+          ZZSH.fx.sndChime();
+          toast("💭 灵感：" + clue.text + "（" + clue.emoji + " " + clue.lineName +
+                " · " + clue.strokes + " 画）—— 猜猜是哪个字？", { long: true });
+        }, 2000);
+      }
+    }
+  }
+
   /* ================= 进度 ================= */
   function renderProgress() {
     var s = ZZSH.engine.stats();
@@ -352,6 +453,7 @@
     if (ZZSH.board.count() > 20) tidyBtn.classList.add("needs-tidy");
     else tidyBtn.classList.remove("needs-tidy");
     if (ZZSH.board.count() > 40) ZZSH.board.tidy();
+    renderNextGoal();
   }
 
   /* ================= 图鉴 ================= */
@@ -865,6 +967,7 @@
     if (!res.ok) {
       ZZSH.board.lockInput(150);
       ZZSH.fx.sndFail();
+      onMergeFail();
       toast(res.failText);
       /* 修复：原先只改了坐标没刷新位置，两块仍叠在一起 */
       ZZSH.board.nudgeApart(p.a, p.b);
@@ -933,6 +1036,8 @@
       renderInventory();
       if (!silent) showCard(res.result);
       renderProgress();
+      /* 里程碑/连击/灵感：beforeGot 要减 1，engine 已经把这个字写进 got 了 */
+      afterNewCharFeedback(res, screenX, screenY, ZZSH.state.data.got.length - 1);
 
       /* 解锁 toast（部件） */
       (res.unlocks || []).forEach(function (u, i) {
@@ -1359,6 +1464,23 @@
       renderCodex();
       showScreen("#screen-codex");
     });
+    /* 目标条右侧「看图鉴」：直接跳到格子墙，看这条线还差哪几个 */
+    var ngJump = $("#ng-jump");
+    if (ngJump) {
+      ngJump.addEventListener("click", function () {
+        ZZSH.fx.sndTap();
+        pauseGuide();
+        var wallTab = $("#tab-wall"), treeTab = $("#tab-tree");
+        if (wallTab && !wallTab.classList.contains("active") && treeTab) {
+          wallTab.classList.add("active");
+          treeTab.classList.remove("active");
+          $("#codex-body").classList.remove("hidden");
+          $("#codex-tree").classList.add("hidden");
+        }
+        renderCodex();
+        showScreen("#screen-codex");
+      });
+    }
     /* 进度条区域保留可点（老习惯不破坏） */
     $("#progress-wrap").addEventListener("click", function () {
       ZZSH.fx.sndTap();

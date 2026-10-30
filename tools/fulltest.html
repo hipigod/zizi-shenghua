@@ -67,7 +67,7 @@ f.addEventListener("load", function () {
     chars.forEach(function (c) {
       Z.state.data = Z.state.importCode(btoa(unescape(encodeURIComponent(JSON.stringify({
         version: 1, got: [], unlockedParts: D.parts.slice(), achievements: [],
-        stats: { tries: 0, fails: 0, hints: 0, panels: 0, quizTokens: 0, startAt: 0, minorEndAt: 0 },
+        stats: { tries: 0, fails: 0, hints: 0, panels: 0, startAt: 0, minorEndAt: 0 },
         settings: { sound: false, strokeAnim: true }, guide: { done: true, step: 99 }, flags: {}
       })))));
       var qm = D.chars[c].quizMode;
@@ -84,7 +84,7 @@ f.addEventListener("load", function () {
     // ---- 5. 全流程真实合成 + 提示候选池 ----
     Z.state.data = Z.state.importCode(btoa(unescape(encodeURIComponent(JSON.stringify({
       version: 1, got: [], unlockedParts: D.parts.slice(), achievements: [],
-      stats: { tries: 0, fails: 0, hints: 0, panels: 0, quizTokens: 0, startAt: 0, minorEndAt: 0 },
+      stats: { tries: 0, fails: 0, hints: 0, panels: 0, startAt: 0, minorEndAt: 0 },
       settings: { sound: false, strokeAnim: true }, guide: { done: true, step: 99 }, flags: {}
     })))));
     Z.engine.selfHeal();

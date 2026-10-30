@@ -39,7 +39,7 @@ store[D.meta.saveKey] = JSON.stringify({
   got: ["明", "休", "林", "森"],
   unlockedParts: ["日", "月", "木", "人", "口", "一", "水", "火", "田", "土"],
   achievements: ["first"],
-  stats: { tries: 10, fails: 1, hints: 0, panels: 0, quizTokens: 0, startAt: Date.now(), minorEndAt: 0 },
+  stats: { tries: 10, fails: 1, hints: 0, panels: 0, startAt: Date.now(), minorEndAt: 0 },
   settings: { sound: true, strokeAnim: true },
   guide: { done: true, step: 9 },
   flags: {}
@@ -70,7 +70,7 @@ ck(!!ZZSH.findRecipe("小", "土"), "小+土 → 尘 配方可命中");
 console.log("\n== 新存档（不含田、土，须靠合成取得）==");
 ZZSH.state.data = ZZSH.state.importCode(Buffer.from(JSON.stringify({
   version: 1, got: [], unlockedParts: D.parts.slice(), achievements: [],
-  stats: { tries: 0, fails: 0, hints: 0, panels: 0, quizTokens: 0, startAt: 0, minorEndAt: 0 },
+  stats: { tries: 0, fails: 0, hints: 0, panels: 0, startAt: 0, minorEndAt: 0 },
   settings: { sound: true, strokeAnim: true }, guide: { done: false, step: 0 }, flags: {}
 }), "utf8").toString("base64"));
 ZZSH.engine.selfHeal();

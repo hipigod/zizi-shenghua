@@ -290,6 +290,64 @@
     return pairs;
   }
 
+  /* ---------------- 下一个目标（CD8 进度可见） ----------------
+   * 选「最容易够到的那条主线」：还差得最少、且当前原料就能拼出一字的线。
+   * 只给一个原料（seed）和主线名，不给整条配方——余下的留给玩家自己碰。 */
+  function nextGoal() {
+    var cands = lineOrder().map(function (id) {
+      var all = allChars().filter(function (c) { return D.chars[c].line === id; });
+      var got = all.filter(has).length;
+      var unknown = all.filter(function (c) { return !has(c); });
+      var pick = null;
+      for (var i = 0; i < unknown.length; i++) {
+        var r = findRecipeFor(unknown[i]);
+        if (r && materialReady(r.a) && materialReady(r.b)) { pick = { char: unknown[i], recipe: r }; break; }
+      }
+      return {
+        lineId: id, name: D.lines[id].name, emoji: D.lines[id].emoji, color: D.lines[id].color,
+        got: got, total: all.length, remain: all.length - got, pick: pick
+      };
+    });
+    var ready = cands.filter(function (c) { return c.remain > 0 && c.pick; });
+    if (ready.length) {
+      ready.sort(function (a, b) { return a.remain - b.remain; });
+      var g = ready[0];
+      return { kind: "goal", lineId: g.lineId, name: g.name, emoji: g.emoji, color: g.color,
+               got: g.got, total: g.total, remain: g.remain,
+               seed: g.pick.recipe.a, char: g.pick.char };
+    }
+    var left = cands.filter(function (c) { return c.remain > 0; });
+    if (!left.length) return { kind: "done" };
+    left.sort(function (a, b) { return a.remain - b.remain; });
+    return { kind: "stuck", lineId: left[0].lineId, name: left[0].name,
+             emoji: left[0].emoji, color: left[0].color, remain: left[0].remain };
+  }
+
+  /* 灵感线索（CD7 好奇）：随机取一个未收集的字，只给本义描述 + 笔画数，
+     不给配方、不给部件。玩家自己去猜，猜不出也不扣任何东西。 */
+  function randomClue(exclude) {
+    var pool = allChars().filter(function (c) {
+      if (has(c)) return false;
+      if (exclude && exclude.indexOf(c) >= 0) return false;
+      var info = D.chars[c];
+      return !!(info.quizDesc || info.note);
+    });
+    if (!pool.length) return null;
+    var c = pool[Math.floor(Math.random() * pool.length)];
+    var info = D.chars[c];
+    var line = D.lines[info.line] || { name: "", emoji: "", color: "#8A7F63" };
+    return {
+      char: c, text: info.quizDesc || info.note,
+      lineName: line.name, emoji: line.emoji, color: line.color, strokes: info.strokes
+    };
+  }
+
+  /* 某主线的「已集/总数」，供里程碑判定用 */
+  function lineTotals(lineId) {
+    var all = allChars().filter(function (c) { return D.chars[c].line === lineId; });
+    return { got: all.filter(has).length, total: all.length };
+  }
+
   /* ---------------- 存档自愈 ----------------
    * 导入存档 / 版本迁移后调用：按当前收集补发遗漏的部件与成就，
    * 并剔除数据表里已不存在的成就 id。不弹任何 toast。 */
@@ -355,6 +413,10 @@
     checkAchievements: checkAchievements,
     checkEndings: checkEndings,
     selfHeal: selfHeal,
+    nextGoal: nextGoal,
+    randomClue: randomClue,
+    lineTotals: lineTotals,
+    lineOrder: lineOrder,
     lineOrder: lineOrder,
     stats: stats,
     lineCount: lineCount,

@@ -30,7 +30,6 @@
       stats: {
         tries: 0, fails: 0, hints: 0,
         panels: 0,                // 选择面板使用次数
-        quizTokens: 0,            // R3 据义造字：造字令
         startAt: Date.now(),
         minorEndAt: 0             // 小通关时间戳（0=未达成）
       },
@@ -82,7 +81,7 @@
       return typeof id === "string";
     })) : [];
     if (data.stats && typeof data.stats === "object") {
-      ["tries", "fails", "hints", "panels", "quizTokens", "startAt", "minorEndAt"].forEach(function (f) {
+      ["tries", "fails", "hints", "panels", "startAt", "minorEndAt"].forEach(function (f) {
         if (typeof data.stats[f] === "number") out.stats[f] = data.stats[f];
       });
     }
