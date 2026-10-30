@@ -266,6 +266,17 @@ function warn(msg) { warns.push(msg); }
 /* ---------- 10. R4 字族树：family 校验 ---------- */
 (function () {
   const chars = Object.keys(D.chars);
+  /* 族根声明提前提取，R4 与第 11 项共用。
+   * 族根字（土田干古）本身在字表里且无 family，是链的合法终点。 */
+  const uiSrcAll = fs.readFileSync(path.join(__dirname, "..", "ui.js"), "utf8");
+  const declSrc = uiSrcAll.slice(uiSrcAll.indexOf("var TREE_ROOTS"), uiSrcAll.indexOf("function renderFamilyTree"));
+  const ROOT_DECLS = new Set();
+  let rm;
+  const reRoot = /roots?:\s*\[?\s*"([^"]+)"(?:\s*,\s*"([^"]+)")?/g;
+  while ((rm = reRoot.exec(declSrc))) {
+    ROOT_DECLS.add(rm[1]);
+    if (rm[2]) ROOT_DECLS.add(rm[2]);
+  }
   const partSet = new Set(Object.keys(D.partInfo));
   const charSet = new Set(chars);
   const bad = [];
@@ -273,14 +284,15 @@ function warn(msg) { warns.push(msg); }
   // 注：非根部件（月口一心田小大不土目一）也是合法终点
   chars.forEach(c => {
     const p = D.chars[c].family;
-    if (!p) { bad.push(`${c} 无 family`); return; }
+    if (!p) { if (!ROOT_DECLS.has(c)) bad.push(`${c} 无 family`); return; }
     if (!partSet.has(p) && !charSet.has(p)) bad.push(`${c} family="${p}" 不在部件∪字表`);
   });
   // 上溯：无环、≤4 步到部件
   chars.forEach(c => {
+    if (!D.chars[c].family) return; /* 无 family 的声明族根即终点 */
     let cur = c, steps = 0;
     const seen = new Set([c]);
-    while (cur && partSet.has(cur) === false) {
+    while (cur && partSet.has(cur) === false && !ROOT_DECLS.has(cur)) {
       cur = D.chars[cur] ? D.chars[cur].family : null;
       steps++;
       if (!cur || steps > 4) { bad.push(`${c} 断链或超4层`); return; }
@@ -291,6 +303,7 @@ function warn(msg) { warns.push(msg); }
   // 语义关联：parent 必须出现在该字配方或其祖先配方中（防标注笔误）
   chars.forEach(c => {
     const p = D.chars[c].family;
+    if (!p) return; /* 族根无 family，不参与配方关联检查 */
     const rs = D.recipes.filter(r => r.results.includes(c));
     if (!rs.length) return;
     const ok = rs.some(r => r.a === p || r.b === p);
@@ -302,20 +315,12 @@ function warn(msg) { warns.push(msg); }
    * ui.js 的 TREE_ROOTS 必须与数据里的族根一一对应，否则那些字在字族树里不显示。
    * 历史上这里只写了 6 个根，导致 21 个字（22%）从树上消失。 */
   (function () {
-    const uiSrc = fs.readFileSync(path.join(__dirname, "..", "ui.js"), "utf8");
-    const decl = uiSrc.slice(uiSrc.indexOf("var TREE_ROOTS"), uiSrc.indexOf("function renderFamilyTree"));
-    const declared = new Set();
-    let m;
-    const re = /roots?:\s*\[?\s*"([^"]+)"(?:\s*,\s*"([^"]+)")?/g;
-    while ((m = re.exec(decl))) {
-      declared.add(m[1]);
-      if (m[2]) declared.add(m[2]);
-    }
-    // 数据里实际的族根 = family 指向非字表的节点
+    const declared = ROOT_DECLS; /* 与 R4 共用同一份声明 */
+    // 数据里实际的族根 = family 指向非字表的节点（无 family 的声明族根除外）
     const actual = new Set();
     chars.forEach(c => {
       const p = D.chars[c].family;
-      if (!charSet.has(p)) actual.add(p);
+      if (p && !charSet.has(p)) actual.add(p);
     });
     const missing = [...actual].filter(r => !declared.has(r));
     const covered = new Set();
