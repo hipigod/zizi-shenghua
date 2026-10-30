@@ -1437,3 +1437,32 @@ body.rz-dragging { user-select: none; }
   .topbar-chip { padding: 5px 8px; }
   .topbar-chip b { margin-left: 1px; }
 }
+
+/* ================= 云端存档 ================= */
+.setting-cloud { align-items: center; }
+.cloud-status { padding: 0 14px 10px; font-size: 13px; }
+.cloud-hint { color: #8a8374; line-height: 1.5; }
+.cloud-user { font-weight: 600; color: #3a352b; margin-bottom: 2px; }
+.cloud-actions { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+.btn-xs { padding: 5px 10px; font-size: 12px; }
+
+/* 登录弹窗 */
+.login-panel {
+  width: 320px; max-width: 88vw;
+  background: #fffdf7; border-radius: 16px; padding: 22px 20px;
+  box-shadow: 0 12px 40px rgba(60, 50, 30, 0.22);
+}
+.login-title { font-size: 17px; font-weight: 700; color: #3a352b; }
+.login-sub { font-size: 12px; color: #8a8374; margin: 4px 0 14px; }
+.login-input {
+  width: 100%; box-sizing: border-box;
+  border: 1.5px solid #e3dccb; border-radius: 10px;
+  padding: 11px 12px; font-size: 15px; color: #2B2B2B;
+  background: #fff; outline: none;
+}
+.login-input:focus { border-color: #C8772E; }
+.login-code-row { display: flex; gap: 8px; margin-top: 10px; align-items: stretch; }
+.login-code-input { flex: 1; }
+.login-code-row .btn { white-space: nowrap; }
+.login-error { min-height: 18px; margin-top: 10px; font-size: 12px; color: #c0392b; }
+.login-btns { display: flex; gap: 10px; margin-top: 6px; justify-content: flex-end; }

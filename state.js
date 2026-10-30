@@ -140,6 +140,15 @@
     reset: reset,
     exportCode: function () { return exportCode(ZZSH.state.data); },
     importCode: importCode,
+    /* 把云端取回的对象（已 JSON.parse）迁移并写入本地，成功返回 true */
+    applyCloud: function (obj) {
+      var m = migrate(obj);
+      if (!m) return false;
+      ZZSH.state.data = m;
+      if (ZZSH.engine && typeof ZZSH.engine.selfHeal === "function") ZZSH.engine.selfHeal();
+      save(ZZSH.state.data);
+      return true;
+    },
     has: function (c) { return ZZSH.state.data.got.indexOf(c) >= 0; },
     add: function (c) {
       if (!ZZSH.state.data.got.includes(c)) {

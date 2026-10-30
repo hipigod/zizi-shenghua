@@ -134,6 +134,11 @@
         <button class="btn btn-ghost btn-sm" id="btn-import-save">导入</button>
       </div>
     </div>
+    <div class="setting-row setting-cloud" id="cloud-row">
+      <span>☁️ 云端存档（多设备同步）</span>
+      <button class="btn btn-ghost btn-sm" id="btn-cloud">登录 / 同步</button>
+    </div>
+    <div class="cloud-status" id="cloud-status"></div>
     <div class="setting-row setting-danger">
       <span>↺ 重置全部进度</span>
       <button class="btn btn-danger btn-sm" id="btn-reset">重置</button>
@@ -215,6 +220,26 @@
   <button class="btn btn-ghost btn-sm guide-skip" id="guide-skip">跳过引导</button>
 </div>
 
+<!-- ==================== 登录弹窗（手机号验证码） ==================== -->
+<div class="modal-mask hidden" id="login-mask">
+  <div class="login-panel">
+    <div class="login-title">登录后跨设备同步进度</div>
+    <div class="login-sub">手机号验证码登录（不填密码）</div>
+    <input id="login-phone" class="login-input" type="tel" inputmode="numeric"
+           maxlength="11" placeholder="请输入 11 位手机号" autocomplete="off">
+    <div class="login-code-row">
+      <input id="login-code" class="login-input login-code-input" type="text" inputmode="numeric"
+             maxlength="6" placeholder="6 位验证码" autocomplete="off">
+      <button class="btn btn-ghost btn-sm" id="btn-send-code">获取验证码</button>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-btns">
+      <button class="btn btn-ghost btn-sm" id="btn-login-cancel">取消</button>
+      <button class="btn btn-primary btn-sm" id="btn-login-ok">登录</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== Toast ==================== -->
 <div class="toast" id="toast"></div>
 
@@ -224,6 +249,7 @@
 <script src="engine.js"></script>
 <script src="fx.js"></script>
 <script src="board.js"></script>
+<script src="cloud.js"></script>
 <script src="ui.js"></script>
 <script src="share.js"></script>
 <script src="resizer.js"></script>

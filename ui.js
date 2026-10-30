@@ -1177,6 +1177,108 @@
         location.reload();
       }
     });
+
+    /* ---------- 云端存档：渲染 + 登录弹窗 ---------- */
+    function fmtAgo(ts) {
+      var s = Math.floor((Date.now() - ts) / 1000);
+      if (s < 60) return "刚刚";
+      if (s < 3600) return Math.floor(s / 60) + " 分钟前";
+      if (s < 86400) return Math.floor(s / 3600) + " 小时前";
+      return Math.floor(s / 86400) + " 天前";
+    }
+    function doUpload() {
+      toast("正在同步到云端…");
+      ZZSH.cloud.uploadProgress().then(function (r) {
+        if (r.error) toast("同步失败：" + r.error.message);
+        else { toast("已同步到云端"); renderCloudArea(); }
+      });
+    }
+    function doDownload() {
+      toast("正在从云端恢复…");
+      ZZSH.cloud.downloadProgress().then(function (r) {
+        if (r.error) { toast("恢复失败：" + r.error.message); return; }
+        if (!r.data) { toast("云端还没有存档"); return; }
+        if (ZZSH.state.applyCloud(r.data)) {
+          $("#set-sound").checked = ZZSH.state.data.settings.sound;
+          $("#set-stroke").checked = ZZSH.state.data.settings.strokeAnim;
+          ZZSH.board.clearBoard(); renderAll();
+          toast("已从云端恢复 · 已收集 " + ZZSH.state.data.got.length + " 字");
+        } else toast("云端存档无效");
+      });
+    }
+    function renderCloudArea() {
+      var st = ZZSH.cloud.getStatus();
+      var box = $("#cloud-status");
+      var btn = $("#btn-cloud");
+      if (!box || !btn) return;
+      if (st === "offline") {
+        btn.textContent = "登录 / 同步"; btn.disabled = false;
+        box.innerHTML = '<span class="cloud-hint">需要联网才能使用云端（游戏可正常离线玩）</span>';
+        return;
+      }
+      if (st === "signed_in") {
+        var u = ZZSH.cloud.getUser();
+        var who = u && u.phoneNumber ? ZZSH.cloud.maskPhone(u.phoneNumber)
+                 : (u && u.name ? u.name : "已登录");
+        var sync = ZZSH.cloud.getLastSyncAt();
+        var syncTxt = sync ? ("已同步 · " + fmtAgo(sync)) : "尚未同步";
+        box.innerHTML =
+          '<div class="cloud-user">👤 ' + who + '</div>' +
+          '<div class="cloud-hint">' + syncTxt + '</div>' +
+          '<div class="cloud-actions">' +
+            '<button class="btn btn-ghost btn-xs" id="btn-cloud-up">立即同步</button>' +
+            '<button class="btn btn-ghost btn-xs" id="btn-cloud-down">从云端恢复</button>' +
+            '<button class="btn btn-ghost btn-xs" id="btn-cloud-out">退出</button>' +
+          '</div>';
+        btn.textContent = "已登录"; btn.disabled = true;
+        $("#btn-cloud-up").onclick = doUpload;
+        $("#btn-cloud-down").onclick = doDownload;
+        $("#btn-cloud-out").onclick = function () { ZZSH.cloud.signOut(); toast("已退出登录"); };
+      } else {
+        btn.textContent = "登录 / 同步"; btn.disabled = false;
+        box.innerHTML = '<span class="cloud-hint">登录后可在手机 / 平板 / 电脑间同步进度</span>';
+      }
+    }
+    function openLogin() {
+      $("#login-mask").classList.remove("hidden");
+      $("#login-error").textContent = "";
+      $("#login-code").value = ""; $("#login-phone").value = "";
+      setTimeout(function () { try { $("#login-phone").focus(); } catch (e) {} }, 50);
+    }
+    function closeLogin() { $("#login-mask").classList.add("hidden"); }
+    ZZSH.cloud.onAuthChange(function () { renderCloudArea(); });
+    $("#btn-cloud").addEventListener("click", function () {
+      if (ZZSH.cloud.getStatus() === "signed_in") return;
+      openLogin();
+    });
+    $("#btn-login-cancel").addEventListener("click", closeLogin);
+    $("#login-mask").addEventListener("click", function (e) {
+      if (e.target === this) closeLogin();
+    });
+    var codeTimer = null;
+    $("#btn-send-code").addEventListener("click", function () {
+      var phone = $("#login-phone").value.trim();
+      var b = this;
+      ZZSH.cloud.sendPhoneCode(phone).then(function (r) {
+        if (r.error) { $("#login-error").textContent = r.error.message; return; }
+        $("#login-error").textContent = "验证码已发送，请查收短信";
+        var n = 60; b.disabled = true;
+        if (codeTimer) clearInterval(codeTimer);
+        codeTimer = setInterval(function () {
+          n--; b.textContent = n + "s";
+          if (n <= 0) { clearInterval(codeTimer); b.disabled = false; b.textContent = "获取验证码"; }
+        }, 1000);
+      });
+    });
+    $("#btn-login-ok").addEventListener("click", function () {
+      var token = $("#login-code").value.trim();
+      if (!token) { $("#login-error").textContent = "请输入验证码"; return; }
+      ZZSH.cloud.verifyPhoneCode(token).then(function (r) {
+        if (r.error) { $("#login-error").textContent = r.error.message; return; }
+        closeLogin();
+        toast("登录成功，正在同步进度");
+      });
+    });
   }
   function promptSaveCode(code) {
     window.prompt("复制这串存档码（在新设备「导入」）：", code);
@@ -1361,6 +1463,7 @@
     bindEvents();
     bindSettings();
     renderAll();
+    ZZSH.cloud.init();
     if (ZZSH.state.data.got.length > 0) {
       $("#btn-continue").classList.remove("hidden");
     }
