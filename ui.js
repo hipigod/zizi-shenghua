@@ -1247,6 +1247,34 @@
     }
     function closeLogin() { $("#login-mask").classList.add("hidden"); }
     ZZSH.cloud.onAuthChange(function () { renderCloudArea(); });
+
+    /* 引导式登录：未登录时弹轻量提示条（非强制、可关），复用登录弹窗 */
+    function maybeShowCloudHint() {
+      var banner = $("#cloud-hint-banner");
+      if (!banner) return;
+      var st = ZZSH.cloud.getStatus();
+      if (st === "signed_in" || st === "offline" || st === "init") {
+        banner.classList.add("hidden");
+        return;
+      }
+      /* signed_out：7 天内点过「暂不」则不再自动弹，避免刷屏 */
+      var dismissed = parseInt(localStorage.getItem("zzsh_cloud_hint_dismissed_ts") || "0", 10);
+      if (Date.now() - dismissed < 7 * 24 * 3600 * 1000) {
+        banner.classList.add("hidden");
+        return;
+      }
+      banner.classList.remove("hidden");
+    }
+    ZZSH.cloud.onAuthChange(maybeShowCloudHint);
+    $("#chb-login").addEventListener("click", function () {
+      $("#cloud-hint-banner").classList.add("hidden");
+      openLogin();
+    });
+    $("#chb-later").addEventListener("click", function () {
+      $("#cloud-hint-banner").classList.add("hidden");
+      localStorage.setItem("zzsh_cloud_hint_dismissed_ts", String(Date.now()));
+    });
+
     $("#btn-cloud").addEventListener("click", function () {
       if (ZZSH.cloud.getStatus() === "signed_in") return;
       openLogin();

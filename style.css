@@ -1466,3 +1466,26 @@ body.rz-dragging { user-select: none; }
 .login-code-row .btn { white-space: nowrap; }
 .login-error { min-height: 18px; margin-top: 10px; font-size: 12px; color: #c0392b; }
 .login-btns { display: flex; gap: 10px; margin-top: 6px; justify-content: flex-end; }
+
+/* 云端引导条（引导式登录，非强制、可关闭） */
+.cloud-hint-banner {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+  z-index: 60; max-width: 94vw; width: min(520px, 94vw);
+  display: flex; align-items: center; gap: 12px;
+  background: #fffdf7; border: 1.5px solid #ecd9b8;
+  border-radius: 14px; padding: 11px 14px;
+  box-shadow: 0 10px 30px rgba(60, 50, 30, 0.18);
+  box-sizing: border-box;
+}
+.cloud-hint-banner.hidden { display: none; }
+.cloud-hint-banner .chb-text {
+  flex: 1; font-size: 13.5px; color: #5a5243; line-height: 1.4;
+}
+.cloud-hint-banner .chb-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* 移动端：引导条贴底、按钮换行不拥挤 */
+@media (max-width: 560px) {
+  .cloud-hint-banner { bottom: 12px; flex-direction: column; align-items: stretch; gap: 8px; }
+  .cloud-hint-banner .chb-text { text-align: center; }
+  .cloud-hint-banner .chb-actions { justify-content: center; }
+}
