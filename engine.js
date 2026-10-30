@@ -247,12 +247,18 @@
   }
 
   /* 提示目标：按主线顺序找第一个「原料就绪但未收集」的字 */
+  /* 主线按 order 排序，动态取，别再硬编码——2026-10-30 拆出身体/心/口舌/玉四条线时，
+     硬编码的 6 条会让这四线的字永远当不上提示目标（玩家卡死却点不出提示）。 */
+  function lineOrder() {
+    return Object.keys(D.lines).sort(function (a, b) { return D.lines[a].order - D.lines[b].order; });
+  }
+
   function pickHintTarget() {
-    /* 提示目标按主线顺序找；顺序跟随 data.js lines 的 order（6 条主线） */
-    var lineOrder = ["caomu", "riyue", "renwu", "shuihuo", "houtu", "menhu"];
-    for (var li = 0; li < lineOrder.length; li++) {
+    var lineOrder_ = lineOrder();
+    for (var li = 0; li < lineOrder_.length; li++) {
+      var lineId = lineOrder_[li];
       var lineChars = allChars().filter(function (c) {
-        return D.chars[c].line === lineOrder[li] && !has(c);
+        return D.chars[c].line === lineId && !has(c);
       });
       for (var i = 0; i < lineChars.length; i++) {
         var r = findRecipeFor(lineChars[i]);
@@ -349,6 +355,7 @@
     checkAchievements: checkAchievements,
     checkEndings: checkEndings,
     selfHeal: selfHeal,
+    lineOrder: lineOrder,
     stats: stats,
     lineCount: lineCount,
     materialReady: materialReady
